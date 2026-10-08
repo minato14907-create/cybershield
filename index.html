@@ -1,771 +1,108 @@
-<!DOCTYPE html>
-<html lang="th">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CyberShield - เครื่องมือรักษาความปลอดภัยไซเบอร์</title>
-    <link
-        href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@300;400;600;700;900&family=Noto+Sans+Thai:wght@300;400;600;700&display=swap"
-        rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/js-md5@0.8.3/src/md5.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.6/dist/chart.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.2/html2pdf.bundle.min.js"></script>
-    <style>
-        :root {
-            --bg: #0a0a0f;
-            --surface: #12121a;
-            --surface2: #1a1a25;
-            --border: #2a2a3a;
-            --green: #00ff88;
-            --green-dim: #00ff8833;
-            --cyan: #00d4ff;
-            --red: #ff3366;
-            --yellow: #ffcc00;
-            --orange: #ff9c40;
-            --purple: #a855f7;
-            --text: #e0e0e0;
-            --text-dim: #6b7280;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Noto Sans Thai', 'Inter', sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            min-height: 100vh;
-            overflow-x: hidden;
-            line-height: 1.8;
-        }
-
-        .matrix-bg {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: -1;
-            opacity: 0.03;
-            background: repeating-linear-gradient(0deg, transparent, transparent 2px, var(--green) 2px, var(--green) 3px);
-        }
-
-        .glow-line {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 2px;
-            background: linear-gradient(90deg, transparent, var(--green), var(--cyan), var(--green), transparent);
-            z-index: 100;
-            animation: glow-move 3s linear infinite;
-        }
-
-        @keyframes glow-move {
-            0% {
-                transform: translateX(-100%);
-            }
-
-            100% {
-                transform: translateX(100%);
-            }
-        }
-
-        header {
-            padding: 1.5rem 2rem;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 1rem;
-        }
-
-        .logo {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 1.6rem;
-            font-weight: 700;
-            background: linear-gradient(135deg, var(--green), var(--cyan));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .logo span {
-            opacity: 0.5;
-        }
-
-        .status-bar {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.75rem;
-            color: var(--green);
-            display: flex;
-            gap: 1rem;
-            flex-wrap: wrap;
-        }
-
-        .status-bar .dot {
-            width: 8px;
-            height: 8px;
-            background: var(--green);
-            border-radius: 50%;
-            display: inline-block;
-            margin-right: 6px;
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-
-            0%,
-            100% {
-                opacity: 1;
-            }
-
-            50% {
-                opacity: 0.3;
-            }
-        }
-
-        .tabs {
-            display: flex;
-            gap: 0;
-            padding: 0 2rem;
-            border-bottom: 1px solid var(--border);
-            overflow-x: auto;
-            scrollbar-width: none;
-        }
-
-        .tabs::-webkit-scrollbar {
-            display: none;
-        }
-
-        .tab {
-            padding: 0.85rem 1rem;
-            font-size: 0.9rem;
-            color: var(--text-dim);
-            background: none;
-            border: none;
-            border-bottom: 2px solid transparent;
-            cursor: pointer;
-            white-space: nowrap;
-            transition: all 0.2s;
-        }
-
-        .tab.active,
-        .tab:hover {
-            color: var(--green);
-            border-color: var(--green);
-            background: var(--surface);
-        }
-
-        .main {
-            padding: 2rem;
-        }
-
-        .panel {
-            display: none;
-            animation: fadeIn 0.3s ease;
-        }
-
-        .panel.active {
-            display: block;
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .hero {
-            text-align: center;
-            padding: 3rem 0 2rem;
-        }
-
-        .hero h1 {
-            font-size: clamp(2rem, 6vw, 3.2rem);
-            font-weight: 900;
-            background: linear-gradient(135deg, var(--green), var(--cyan), var(--purple));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-bottom: 1rem;
-        }
-
-        .hero p {
-            font-size: clamp(0.95rem, 2.5vw, 1.05rem);
-            color: var(--text-dim);
-            max-width: 700px;
-            margin: 0 auto;
-        }
-
-        .tools-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-            gap: 1rem;
-            margin-top: 2rem;
-        }
-
-        .tool-card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            padding: 1.5rem;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .tool-card:hover {
-            border-color: var(--green);
-            transform: translateY(-3px);
-            box-shadow: 0 6px 24px var(--green-dim);
-        }
-
-        .tool-card .icon {
-            font-size: 2rem;
-            margin-bottom: 0.75rem;
-        }
-
-        .tool-card h3 {
-            font-size: 1rem;
-            margin-bottom: 0.5rem;
-        }
-
-        .tool-card p {
-            font-size: 0.85rem;
-            color: var(--text-dim);
-        }
-
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 1rem;
-        }
-
-        .card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            padding: 1.25rem;
-        }
-
-        .card h3 {
-            color: var(--green);
-            margin-bottom: 1rem;
-            font-size: 1rem;
-        }
-
-        input,
-        select,
-        textarea {
-            width: 100%;
-            padding: 0.75rem 1rem;
-            background: var(--bg);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            color: var(--text);
-            font-family: 'JetBrains Mono', 'Noto Sans Thai', monospace;
-            font-size: 0.9rem;
-            margin-bottom: 0.9rem;
-        }
-
-        button {
-            padding: 0.75rem 1.5rem;
-            background: linear-gradient(135deg, var(--green), #00cc6a);
-            color: #000;
-            border: none;
-            border-radius: 8px;
-            font-weight: 700;
-            cursor: pointer;
-            font-size: 0.9rem;
-        }
-
-        button.secondary {
-            background: transparent;
-            color: var(--text);
-            border: 1px solid var(--border);
-        }
-
-        .btn-group {
-            display: flex;
-            gap: 0.75rem;
-            flex-wrap: wrap;
-        }
-
-        .result-box {
-            background: var(--bg);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 1rem;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.85rem;
-            white-space: pre-wrap;
-            word-break: break-word;
-            min-height: 60px;
-        }
-
-        .result-box.success {
-            border-color: var(--green);
-        }
-
-        .result-box.error {
-            border-color: var(--red);
-        }
-
-        .tag {
-            display: inline-block;
-            padding: 0.2rem 0.5rem;
-            border-radius: 4px;
-            font-size: 0.75rem;
-            margin: 0.2rem 0.2rem 0.2rem 0;
-            background: var(--surface2);
-            color: var(--text-dim);
-        }
-
-        .tag.green {
-            background: var(--green-dim);
-            color: var(--green);
-        }
-
-        .tag.red {
-            background: #ff336633;
-            color: var(--red);
-        }
-
-        .tag.yellow {
-            background: #ffcc0033;
-            color: var(--yellow);
-        }
-
-        .tag.orange {
-            background: #ff9c4033;
-            color: var(--orange);
-        }
-
-        .hash-row {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            padding: 0.6rem;
-            background: var(--surface2);
-            border-radius: 6px;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.8rem;
-            margin-bottom: 0.5rem;
-        }
-
-        .hash-row .algo {
-            min-width: 70px;
-            color: var(--cyan);
-            font-weight: 700;
-        }
-
-        .hash-row .value {
-            flex: 1;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.9rem;
-        }
-
-        th,
-        td {
-            padding: 0.7rem;
-            border: 1px solid var(--border);
-            text-align: left;
-        }
-
-        th {
-            background: var(--surface2);
-        }
-
-        footer {
-            text-align: center;
-            padding: 2rem;
-            border-top: 1px solid var(--border);
-            color: var(--text-dim);
-            font-size: 0.8rem;
-        }
-
-        @media (max-width: 768px) {
-            header {
-                padding: 1rem;
-            }
-
-            .tabs {
-                padding: 0 1rem;
-            }
-
-            .main {
-                padding: 1rem;
-            }
-        }
-    </style>
-</head>
-
-<body>
-    <div class="matrix-bg"></div>
-    <div class="glow-line"></div>
-
-    <header>
-        <div class="logo">&gt;_ CyberShield<span>.tool</span></div>
-        <div class="status-bar">
-            <span><span class="dot"></span>ระบบออนไลน์</span>
-            <span>v1.1.0</span>
-        </div>
-    </header>
-
-    <div class="tabs">
-        <button class="tab active" onclick="showPanel('home')">หน้าแรก</button>
-        <button class="tab" onclick="showPanel('password')">วิเคราะห์รหัสผ่าน</button>
-        <button class="tab" onclick="showPanel('encryption')">เข้ารหัส</button>
-        <button class="tab" onclick="showPanel('hashing')">แฮช</button>
-        <button class="tab" onclick="showPanel('risk')">Risk Assessment</button>
-        <button class="tab" onclick="showPanel('dashboard')">Security Dashboard</button>
-        <button class="tab" onclick="showPanel('report')">Security Report</button>
-        <button class="tab" onclick="showPanel('about')">เกี่ยวกับ</button>
-    </div>
-
-    <div class="main">
-        <div class="panel active" id="home">
-            <div class="hero">
-                <h1>CyberShield</h1>
-                <p>เครื่องมือรักษาความปลอดภัยไซเบอร์ครบวงจร</p>
-            </div>
-            <div class="tools-grid">
-                <div class="tool-card" onclick="showPanel('password')">
-                    <div class="icon">🔐</div>
-                    <h3>วิเคราะห์รหัสผ่าน</h3>
-                    <p>ตรวจความแรงของรหัสผ่าน</p>
-                </div>
-                <div class="tool-card" onclick="showPanel('encryption')">
-                    <div class="icon">🔒</div>
-                    <h3>เครื่องมือเข้ารหัส</h3>
-                    <p>Caesar, Vigenere, Base64 & Hash</p>
-                </div>
-                <div class="tool-card" onclick="showPanel('risk')">
-                    <div class="icon">⚠️</div>
-                    <h3>Risk Assessment Engine</h3>
-                    <p>ประเมินความเสี่ยงแบบ Likelihood × Impact</p>
-                </div>
-                <div class="tool-card" onclick="showPanel('dashboard')">
-                    <div class="icon">📊</div>
-                    <h3>Security Dashboard</h3>
-                    <p>แสดงภาพรวมความปลอดภัย</p>
-                </div>
-                <div class="tool-card" onclick="showPanel('report')">
-                    <div class="icon">📄</div>
-                    <h3>Automated Security Report</h3>
-                    <p>สร้างรายงานอัตโนมัติ</p>
-                </div>
-            </div>
-        </div>
-
-        <div class="panel" id="password">
-            <div class="grid">
-                <div class="card">
-                    <h3>🔐 วิเคราะห์รหัสผ่าน</h3>
-                    <input type="password" id="pwd-input" placeholder="พิมพ์รหัสผ่าน..." oninput="analyzePassword()">
-                    <div id="pwd-result" class="result-box"></div>
-                </div>
-            </div>
-        </div>
-
-        <div class="panel" id="encryption">
-            <div class="grid">
-                <div class="card">
-                    <h3>🔒 เข้ารหัส / แฮช</h3>
-                    <input type="text" id="enc-input" placeholder="ข้อความ">
-                    <input type="text" id="enc-key" placeholder="คีย์ (Caesar/Vigenere)">
-                    <select id="enc-algo">
-                        <option value="caesar">Caesar</option>
-                        <option value="vigenere">Vigenere</option>
-                        <option value="base64">Base64</option>
-                        <option value="md5">MD5</option>
-                        <option value="sha1">SHA-1</option>
-                        <option value="sha256">SHA-256</option>
-                        <option value="sha512">SHA-512</option>
-                    </select>
-                    <button onclick="encryptText()">เข้ารหัส</button>
-                    <div id="enc-result" class="result-box" style="margin-top:1rem;"></div>
-                </div>
-            </div>
-        </div>
-
-        <div class="panel" id="hashing">
+        <section class="panel" id="password">
             <div class="card">
-                <h3># เปรียบเทียบแฮช</h3>
-                <input type="text" id="hash-input" placeholder="ข้อความ..." oninput="compareHashes()">
-                <div id="hash-results"></div>
-            </div>
-        </div>
-
-        <div class="panel" id="risk">
-            <div class="grid">
-                <div class="card">
-                    <h3>⚠️ Risk Assessment Engine</h3>
-                    <input type="text" id="risk-asset" placeholder="ชื่อทรัพย์สิน">
-                    <select id="risk-likely">
-                        <option value="1">ต่ำ (1)</option>
-                        <option value="2">ปานกลาง-ต่ำ (2)</option>
-                        <option value="3">ปานกลาง (3)</option>
-                        <option value="4">สูง (4)</option>
-                        <option value="5">สูงมาก (5)</option>
-                    </select>
-                    <select id="risk-impact">
-                        <option value="1">ต่ำ (1)</option>
-                        <option value="2">ปานกลาง (2)</option>
-                        <option value="3">สำคัญ (3)</option>
-                        <option value="4">รุนแรง (4)</option>
-                        <option value="5">วิกฤติ (5)</option>
-                    </select>
-                    <textarea id="risk-desc" placeholder="รายละเอียดความเสี่ยง"></textarea>
-                    <button onclick="addRisk()">เพิ่มความเสี่ยง</button>
-                </div>
-                <div class="card">
-                    <h3>รายการความเสี่ยง</h3>
-                    <div id="risk-list"></div>
-                </div>
-            </div>
-        </div>
-
-        <div class="panel" id="dashboard">
-            <div class="grid">
-                <div class="card">
-                    <h3>📊 Security Dashboard</h3>
-                    <div class="chart-container">
-                        <canvas id="riskChart"></canvas>
+                <div class="card-inner">
+                    <div class="card-header">
+                        <div>
+                            <span class="eyebrow">Password Analysis</span>
+                            <h2 class="card-title">วิเคราะห์รหัสผ่าน</h2>
+                            <p class="card-subtitle">ระบบจะประเมินความแข็งแรงและเวลาที่ใช้ในการแคร็กให้อัตโนมัติ</p>
+                        </div>
+                    </div>
+                    <div class="field-group">
+                        <div class="field">
+                            <label for="pwd-input">รหัสผ่านที่ต้องการวิเคราะห์</label>
+                            <input type="password" id="pwd-input" placeholder="พิมพ์รหัสผ่านที่นี่..." autocomplete="off">
+                        </div>
+                    </div>
+                    <div class="result-grid">
+                        <article class="stat-card">
+                            <span class="stat-label">Strength Level</span>
+                            <span class="stat-value" id="pwd-level">--</span>
+                            <span class="card-subtitle" id="pwd-score">คะแนน: --</span>
+                        </article>
+                        <article class="stat-card">
+                            <span class="stat-label">Entropy</span>
+                            <span class="stat-value" id="pwd-entropy">-- bits</span>
+                            <span class="card-subtitle">ค่าความไม่แน่นอนของรหัสผ่าน</span>
+                        </article>
+                        <article class="stat-card">
+                            <span class="stat-label">Estimated Crack Time</span>
+                            <span class="stat-value" id="pwd-crack">--</span>
+                            <span class="card-subtitle">ประมาณการแบบ Offline Attack</span>
+                        </article>
+                    </div>
+                    <div class="card">
+                        <div class="card-inner" style="padding: 1.6rem;">
+                            <div class="card-header">
+                                <div>
+                                    <span class="eyebrow">Character Set</span>
+                                    <h3 class="card-title">การตรวจสอบชุดตัวอักษร</h3>
+                                </div>
+                            </div>
+                            <div class="actions" id="pwd-chars"></div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-inner" style="padding: 1.6rem;">
+                            <div class="card-header">
+                                <div>
+                                    <span class="eyebrow">Recommendation</span>
+                                    <h3 class="card-title">คำแนะนำเพื่อปรับปรุงความปลอดภัย</h3>
+                                </div>
+                            </div>
+                            <div class="output" id="pwd-advice" style="background: transparent; border: none; padding: 0;">กรุณาพิมพ์รหัสผ่านเพื่อเริ่มวิเคราะห์</div>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-
-        <div class="panel" id="report">
-            <div class="card">
-                <h3>📄 Automated Security Report</h3>
-                <div class="btn-group">
-                    <button onclick="generateReport()">สร้างรายงาน</button>
-                    <button class="secondary" onclick="exportPDF()">Export PDF</button>
-                    <button class="secondary" onclick="exportJSON()">Export JSON</button>
-                </div>
-                <div id="report-content" style="margin-top:1rem; background:var(--surface2); padding:1rem; border-radius:8px;"></div>
-            </div>
-        </div>
-
-        <div class="panel" id="about">
-            <div class="card">
-                <h3>เกี่ยวกับ</h3>
-                <p style="color:var(--text-dim)">CyberShield v1.1.0 - เครื่องมือเพื่อการศึกษาเท่านั้น</p>
-            </div>
-        </div>
-    </div>
-
-    <footer>
-        CyberShield v1.1.0 | สร้างด้วย HTML/CSS/JS
-    </footer>
-
-    <script>
-        function showPanel(id) {
-            document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
-            const tabMap = { 'home': 0, 'password': 1, 'encryption': 2, 'hashing': 3, 'risk': 4, 'dashboard': 5, 'report': 6, 'about': 7 };
-            const idx = tabMap[id];
-            if (idx !== undefined) document.querySelectorAll('.tab')[idx].classList.add('active');
+        </section>
+    </main>
+    <footer>CyberShield v1.1.1 | Static Site for GitHub Pages</footer>
+<script>
+        const panels = document.querySelectorAll('.panel');
+        const navBtns = document.querySelectorAll('.nav-btn');
+        const toolItems = document.querySelectorAll('.tool-item');
+        function showPanel(id){
+            panels.forEach(p=>p.classList.toggle('active', p.id===id));
+            navBtns.forEach(b=>b.classList.toggle('active', b.dataset.panel===id));
         }
-
-        async function shaHex(algo, text) {
-            try {
-                const enc = new TextEncoder().encode(text);
-                const h = await crypto.subtle.digest(algo, enc);
-                return Array.from(new Uint8Array(h)).map(b => b.toString(16).padStart(2, '0')).join('');
-            } catch (e) {
-                return '--';
-            }
+        navBtns.forEach(b=>b.addEventListener('click',()=>showPanel(b.dataset.panel)));
+        toolItems.forEach(b=>b.addEventListener('click',()=>showPanel(b.dataset.panel)));
+        
+        const pwdInput = document.getElementById('pwd-input');
+        pwdInput.addEventListener('input', analyzePassword);
+        function analyzePassword(){
+            const pwd = pwdInput.value;
+            if(!pwd){ document.getElementById('pwd-level').textContent='--'; document.getElementById('pwd-score').textContent='คะแนน: --'; document.getElementById('pwd-entropy').textContent='-- bits'; document.getElementById('pwd-crack').textContent='--'; document.getElementById('pwd-chars').innerHTML=''; document.getElementById('pwd-advice').textContent='กรุณาพิมพ์รหัสผ่านเพื่อเริ่มวิเคราะห์'; return; }
+            let charset=0; if(/[a-z]/.test(pwd)) charset+=26; if(/[A-Z]/.test(pwd)) charset+=26; if(/\d/.test(pwd)) charset+=10; if(/[!@#$%^&*(),.?":{}|<>]/.test(pwd)) charset+=32;
+            const entropy = charset? pwd.length*Math.log2(charset):0;
+            let score=0, adv=[];
+            if(pwd.length>=8) score++; else adv.push('เพิ่มความยาวอย่างน้อย 8 ตัวอักษร');
+            if(pwd.length>=12) score++;
+            if(/[A-Z]/.test(pwd)&&/[a-z]/.test(pwd)) score++; else adv.push('ผสมตัวพิมพ์เล็กและตัวพิมพ์ใหญ่');
+            if(/\d/.test(pwd)) score++; else adv.push('เพิ่มตัวเลข');
+            if(/[!@#$%^&*(),.?":{}|<>]/.test(pwd)) score++; else adv.push('เพิ่มอักขระพิเศษ');
+            score=Math.min(score,4);
+            const labels=['อ่อนมาก','อ่อน','พอใช้','แข็งแรง','แข็งแรงมาก'];
+            document.getElementById('pwd-level').textContent=labels[score];
+            document.getElementById('pwd-score').textContent='คะแนน: '+score+'/4';
+            document.getElementById('pwd-entropy').textContent=entropy.toFixed(2)+' bits';
+            let comb=charset? Math.pow(charset,pwd.length):1, sec=comb/1e4;
+            let crack='--';
+            if(sec<1) crack='ทันที'; else if(sec<60) crack=Math.round(sec)+' วินาที'; else if(sec<3600) crack=Math.round(sec/60)+' นาที'; else if(sec<86400) crack=Math.round(sec/3600)+' ชั่วโมง'; else if(sec<31536000) crack=Math.round(sec/86400)+' วัน'; else { let y=sec/31536000; crack=y<1e12? y.toLocaleString('th-TH')+' ปี': y.toExponential(2)+' ปี'; }
+            document.getElementById('pwd-crack').textContent=crack;
+            const chars=[];
+            if(/[a-z]/.test(pwd)) chars.push('<span class="btn ghost">a-z ✓</span>');
+            else chars.push('<span class="btn ghost">a-z ✗</span>');
+            if(/[A-Z]/.test(pwd)) chars.push('<span class="btn ghost">A-Z ✓</span>');
+            else chars.push('<span class="btn ghost">A-Z ✗</span>');
+            if(/\d/.test(pwd)) chars.push('<span class="btn ghost">0-9 ✓</span>');
+            else chars.push('<span class="btn ghost">0-9 ✗</span>');
+            if(/[!@#$%^&*(),.?":{}|<>]/.test(pwd)) chars.push('<span class="btn ghost">!@# ✓</span>');
+            else chars.push('<span class="btn ghost">!@# ✗</span>');
+            document.getElementById('pwd-chars').innerHTML=chars.join('');
+            document.getElementById('pwd-advice').textContent=adv.length? adv.join('\n'): 'รหัสผ่านมีความแข็งแรงดี';
         }
-
-        function analyzePassword() {
-            const pwd = document.getElementById('pwd-input').value;
-            const el = document.getElementById('pwd-result');
-            if (!pwd) { el.textContent = ''; return; }
-            let score = 0;
-            if (pwd.length >= 8) score++;
-            if (pwd.length >= 12) score++;
-            if (/[A-Z]/.test(pwd) && /[a-z]/.test(pwd)) score++;
-            if (/\d/.test(pwd)) score++;
-            if (/[!@#$%^&*]/.test(pwd)) score++;
-            score = Math.min(score, 4);
-            const labels = ['อ่อนมาก', 'อ่อน', 'พอใช้', 'แข็งแรง', 'แข็งแรงมาก'];
-            el.textContent = 'คะแนน: ' + score + '/4 (' + labels[score] + ')\nความยาว: ' + pwd.length;
-        }
-
-        async function encryptText() {
-            const text = document.getElementById('enc-input').value;
-            const key = document.getElementById('enc-key').value;
-            const algo = document.getElementById('enc-algo').value;
-            const el = document.getElementById('enc-result');
-            if (!text) { el.textContent = ''; return; }
-            if (algo === 'caesar') {
-                let shift = /^\d+$/.test(key) ? parseInt(key) % 26 : 3;
-                let res = '';
-                for (let c of text) {
-                    if (c >= 'A' && c <= 'Z') res += String.fromCharCode((c.charCodeAt(0) - 65 + shift + 26) % 26 + 65);
-                    else if (c >= 'a' && c <= 'z') res += String.fromCharCode((c.charCodeAt(0) - 97 + shift + 26) % 26 + 97);
-                    else res += c;
-                }
-                el.textContent = 'Caesar:\n' + res;
-            } else if (algo === 'vigenere') {
-                let k = (key || 'key').toLowerCase().replace(/[^a-z]/g, '') || 'key';
-                let res = [], ki = 0;
-                for (let c of text) {
-                    if ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z')) {
-                        let base = c >= 'A' && c <= 'Z' ? 65 : 97;
-                        let shift = k.charCodeAt(ki % k.length) - 97;
-                        res.push(String.fromCharCode((c.charCodeAt(0) - base + shift + 26) % 26 + base));
-                        ki++;
-                    } else res.push(c);
-                }
-                el.textContent = 'Vigenere:\n' + res.join('');
-            } else if (algo === 'base64') {
-                el.textContent = 'Base64:\n' + btoa(unescape(encodeURIComponent(text)));
-            } else if (algo === 'md5') {
-                el.textContent = 'MD5:\n' + (typeof md5 !== 'undefined' ? md5(text) : '--');
-            } else if (algo === 'sha1') {
-                const h = await shaHex('SHA-1', text);
-                el.textContent = 'SHA-1:\n' + h;
-            } else if (algo === 'sha256') {
-                const h = await shaHex('SHA-256', text);
-                el.textContent = 'SHA-256:\n' + h;
-            } else if (algo === 'sha512') {
-                const h = await shaHex('SHA-512', text);
-                el.textContent = 'SHA-512:\n' + h;
-            }
-        }
-
-        async function compareHashes() {
-            const text = document.getElementById('hash-input').value;
-            const el = document.getElementById('hash-results');
-            if (!text) { el.innerHTML = ''; return; }
-            const [m, s1, s2, s5] = await Promise.all([
-                typeof md5 !== 'undefined' ? md5(text) : '--',
-                shaHex('SHA-1', text),
-                shaHex('SHA-256', text),
-                shaHex('SHA-512', text)
-            ]);
-            el.innerHTML = '<div class="hash-row"><span class="algo">MD5</span><span class="value">' + m + '</span></div>' +
-                '<div class="hash-row"><span class="algo">SHA-1</span><span class="value">' + s1 + '</span></div>' +
-                '<div class="hash-row"><span class="algo">SHA-256</span><span class="value">' + s2 + '</span></div>' +
-                '<div class="hash-row"><span class="algo">SHA-512</span><span class="value">' + s5 + '</span></div>';
-        }
-
-        let risks = [];
-        function addRisk() {
-            const asset = document.getElementById('risk-asset').value;
-            const l = parseInt(document.getElementById('risk-likely').value);
-            const i = parseInt(document.getElementById('risk-impact').value);
-            const desc = document.getElementById('risk-desc').value;
-            if (!asset) return;
-            const score = l * i;
-            risks.push({ asset, l, i, score, desc, date: new Date().toISOString() });
-            renderRisks();
-        }
-
-        function renderRisks() {
-            const el = document.getElementById('risk-list');
-            if (risks.length === 0) { el.innerHTML = '<span style="color:var(--text-dim)">ยังไม่มีข้อมูล</span>'; return; }
-            let html = '<table><tr><th>ทรัพย์สิน</th><th>L×I</th><th>คะแนน</th><th>ระดับ</th></tr>';
-            risks.forEach(r => {
-                let level = 'ต่ำ';
-                if (r.score >= 15) level = 'วิกฤติ';
-                else if (r.score >= 10) level = 'สูง';
-                else if (r.score >= 6) level = 'ปานกลาง';
-                else level = 'ต่ำ';
-                html += '<tr><td>' + r.asset + '</td><td>' + r.l + '×' + r.i + '</td><td>' + r.score + '</td><td>' + level + '</td></tr>';
-            });
-            html += '</table>';
-            el.innerHTML = html;
-            updateChart();
-        }
-
-        let riskChart = null;
-        function updateChart() {
-            const ctx = document.getElementById('riskChart');
-            if (!ctx) return;
-            const levels = { 'ต่ำ': 0, 'ปานกลาง': 0, 'สูง': 0, 'วิกฤติ': 0 };
-            risks.forEach(r => {
-                if (r.score >= 15) levels['วิกฤติ']++;
-                else if (r.score >= 10) levels['สูง']++;
-                else if (r.score >= 6) levels['ปานกลาง']++;
-                else levels['ต่ำ']++;
-            });
-            if (riskChart) riskChart.destroy();
-            riskChart = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: Object.keys(levels),
-                    datasets: [{
-                        label: 'จำนวนความเสี่ยง',
-                        data: Object.values(levels),
-                        backgroundColor: ['#00ff88', '#ff9c40', '#ffcc00', '#ff3366']
-                    }]
-                },
-                options: { responsive: true, scales: { y: { ticks: { color: '#e0e0e0' } }, x: { ticks: { color: '#e0e0e0' } } } }
-            });
-        }
-
-        let reportData = [];
-        function generateReport() {
-            reportData = risks.slice();
-            const el = document.getElementById('report-content');
-            let html = '<h2 style="color:var(--green); margin-bottom:1rem">Security Report</h2>';
-            html += '<p style="color:var(--text-dim)">วันที่: ' + new Date().toLocaleString('th-TH') + '</p>';
-            html += '<h3 style="margin-top:1rem">สรุปความเสี่ยง</h3>';
-            if (reportData.length === 0) html += '<p style="color:var(--text-dim)">ไม่มีข้อมูลความเสี่ยง</p>';
-            else {
-                html += '<table><tr><th>ทรัพย์สิน</th><th>รายละเอียด</th><th>คะแนน</th></tr>';
-                reportData.forEach(r => {
-                    html += '<tr><td>' + r.asset + '</td><td>' + (r.desc || '-') + '</td><td>' + r.score + '</td></tr>';
-                });
-                html += '</table>';
-            }
-            el.innerHTML = html;
-        }
-
-        function exportPDF() {
-            const el = document.getElementById('report-content');
-            if (!el.innerHTML) generateReport();
-            html2pdf().set({ margin: 10, filename: 'CyberShield_Report.pdf', html2canvas: { scale: 2 } }).from(el).save();
-        }
-
-        function exportJSON() {
-            const data = { generated: new Date().toISOString(), risks: risks };
-            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'CyberShield_Report.json';
-            a.click();
-            URL.revokeObjectURL(url);
-        }
-
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') showPanel('home');
-        });
     </script>
 </body>
-
 </html>
