@@ -1,12 +1,17 @@
 <!DOCTYPE html>
 <html lang="th">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CyberShield - เครื่องมือรักษาความปลอดภัยไซเบอร์</title>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@300;400;600;700;900&family=Noto+Sans+Thai:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@300;400;600;700;900&family=Noto+Sans+Thai:wght@300;400;600;700&display=swap"
+        rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/js-md5@0.8.3/src/md5.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.6/dist/chart.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.2/html2pdf.bundle.min.js"></script>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
         :root {
             --bg: #0a0a0f;
             --surface: #12121a;
@@ -17,165 +22,401 @@
             --cyan: #00d4ff;
             --red: #ff3366;
             --yellow: #ffcc00;
+            --orange: #ff9c40;
             --purple: #a855f7;
             --text: #e0e0e0;
             --text-dim: #6b7280;
         }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
             font-family: 'Noto Sans Thai', 'Inter', sans-serif;
             background: var(--bg);
             color: var(--text);
             min-height: 100vh;
             overflow-x: hidden;
+            line-height: 1.8;
         }
+
         .matrix-bg {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            z-index: -1; opacity: 0.03;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 0.03;
             background: repeating-linear-gradient(0deg, transparent, transparent 2px, var(--green) 2px, var(--green) 3px);
         }
+
         .glow-line {
-            position: fixed; top: 0; left: 0; width: 100%; height: 2px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
             background: linear-gradient(90deg, transparent, var(--green), var(--cyan), var(--green), transparent);
-            z-index: 100; animation: glow-move 3s linear infinite;
+            z-index: 100;
+            animation: glow-move 3s linear infinite;
         }
-        @keyframes glow-move { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+
+        @keyframes glow-move {
+            0% {
+                transform: translateX(-100%);
+            }
+
+            100% {
+                transform: translateX(100%);
+            }
+        }
+
         header {
-            padding: 2rem 3rem; border-bottom: 1px solid var(--border);
-            display: flex; justify-content: space-between; align-items: center;
+            padding: 1.5rem 2rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
         }
+
         .logo {
-            font-family: 'JetBrains Mono', monospace; font-size: 1.8rem; font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.6rem;
+            font-weight: 700;
             background: linear-gradient(135deg, var(--green), var(--cyan));
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
-        .logo span { opacity: 0.5; }
+
+        .logo span {
+            opacity: 0.5;
+        }
+
         .status-bar {
-            font-family: 'JetBrains Mono', monospace; font-size: 0.75rem;
-            color: var(--green); display: flex; gap: 1.5rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--green);
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
         }
+
         .status-bar .dot {
-            width: 8px; height: 8px; background: var(--green); border-radius: 50%;
-            display: inline-block; margin-right: 6px; animation: pulse 2s infinite;
+            width: 8px;
+            height: 8px;
+            background: var(--green);
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 6px;
+            animation: pulse 2s infinite;
         }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.3;
+            }
+        }
+
         .tabs {
-            display: flex; gap: 0; padding: 0 3rem;
-            border-bottom: 1px solid var(--border); overflow-x: auto;
+            display: flex;
+            gap: 0;
+            padding: 0 2rem;
+            border-bottom: 1px solid var(--border);
+            overflow-x: auto;
+            scrollbar-width: none;
         }
+
+        .tabs::-webkit-scrollbar {
+            display: none;
+        }
+
         .tab {
-            padding: 1rem 1.5rem; font-family: 'Noto Sans Thai', sans-serif;
-            font-size: 0.85rem; color: var(--text-dim); cursor: pointer;
-            border-bottom: 2px solid transparent; transition: all 0.2s;
-            white-space: nowrap; background: none;
-            border-top: none; border-left: none; border-right: none;
+            padding: 0.85rem 1rem;
+            font-size: 0.9rem;
+            color: var(--text-dim);
+            background: none;
+            border: none;
+            border-bottom: 2px solid transparent;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s;
         }
-        .tab:hover { color: var(--text); background: var(--surface); }
-        .tab.active { color: var(--green); border-bottom-color: var(--green); background: var(--surface); }
-        .main { padding: 2rem 3rem; }
-        .panel { display: none; animation: fadeIn 0.3s ease; }
-        .panel.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
-        .card {
-            background: var(--surface); border: 1px solid var(--border);
-            border-radius: 12px; padding: 1.5rem; transition: border-color 0.2s;
+
+        .tab.active,
+        .tab:hover {
+            color: var(--green);
+            border-color: var(--green);
+            background: var(--surface);
         }
-        .card:hover { border-color: var(--green); }
-        .card h3 {
-            font-family: 'Noto Sans Thai', 'JetBrains Mono', monospace;
-            font-size: 0.9rem; color: var(--green); margin-bottom: 1rem;
-            letter-spacing: 0.5px;
+
+        .main {
+            padding: 2rem;
         }
-        .stat-value {
-            font-size: 2.5rem; font-weight: 900;
-            background: linear-gradient(135deg, var(--green), var(--cyan));
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+
+        .panel {
+            display: none;
+            animation: fadeIn 0.3s ease;
         }
-        .stat-label { font-size: 0.8rem; color: var(--text-dim); margin-top: 0.25rem; }
-        input, select {
-            width: 100%; padding: 0.8rem 1rem; background: var(--bg);
-            border: 1px solid var(--border); border-radius: 8px; color: var(--text);
-            font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;
-            margin-bottom: 1rem; outline: none; transition: border-color 0.2s;
+
+        .panel.active {
+            display: block;
         }
-        input:focus, select:focus { border-color: var(--green); }
-        input::placeholder { color: var(--text-dim); }
-        select option { background: var(--surface); }
-        button {
-            padding: 0.8rem 2rem;
-            background: linear-gradient(135deg, var(--green), #00cc6a);
-            color: #000; border: none; border-radius: 8px;
-            font-family: 'Noto Sans Thai', 'JetBrains Mono', monospace;
-            font-size: 0.9rem; font-weight: 700; cursor: pointer;
-            transition: all 0.2s; letter-spacing: 0.5px;
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
-        button:hover { transform: translateY(-2px); box-shadow: 0 4px 20px var(--green-dim); }
-        button:active { transform: translateY(0); }
-        .result-box {
-            background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
-            padding: 1.2rem; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem;
-            margin-top: 1rem; min-height: 60px; word-break: break-all; white-space: pre-wrap;
+
+        .hero {
+            text-align: center;
+            padding: 3rem 0 2rem;
         }
-        .result-box.success { border-color: var(--green); }
-        .result-box.error { border-color: var(--red); }
-        .strength-bar { height: 8px; background: var(--bg); border-radius: 4px; overflow: hidden; margin: 0.5rem 0; }
-        .strength-fill { height: 100%; border-radius: 4px; transition: width 0.5s ease, background 0.5s ease; }
-        .tag {
-            display: inline-block; padding: 0.25rem 0.6rem; border-radius: 4px;
-            font-size: 0.7rem; font-family: 'JetBrains Mono', monospace; margin-right: 0.5rem;
-        }
-        .tag.green { background: var(--green-dim); color: var(--green); }
-        .tag.red { background: #ff336633; color: var(--red); }
-        .tag.yellow { background: #ffcc0033; color: var(--yellow); }
-        .tag.cyan { background: #00d4ff33; color: var(--cyan); }
-        .hash-grid { display: grid; grid-template-columns: 1fr; gap: 0.5rem; }
-        .hash-row {
-            display: flex; align-items: center; gap: 0.75rem; padding: 0.6rem;
-            background: var(--surface2); border-radius: 6px;
-            font-family: 'JetBrains Mono', monospace; font-size: 0.75rem;
-        }
-        .hash-row .algo { min-width: 70px; color: var(--cyan); font-weight: 700; }
-        .hash-row .value { color: var(--text); overflow: hidden; text-overflow: ellipsis; }
-        .hero { text-align: center; padding: 4rem 0 3rem; }
+
         .hero h1 {
-            font-size: 3.5rem; font-weight: 900;
+            font-size: clamp(2rem, 6vw, 3.2rem);
+            font-weight: 900;
             background: linear-gradient(135deg, var(--green), var(--cyan), var(--purple));
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 1rem;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 1rem;
         }
-        .hero p { font-size: 1.1rem; color: var(--text-dim); max-width: 600px; margin: 0 auto; }
-        .tools-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-top: 2rem; }
+
+        .hero p {
+            font-size: clamp(0.95rem, 2.5vw, 1.05rem);
+            color: var(--text-dim);
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .tools-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
         .tool-card {
-            background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
-            padding: 2rem; text-align: center; cursor: pointer; transition: all 0.3s;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 1.5rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
         }
-        .tool-card:hover { border-color: var(--green); transform: translateY(-4px); box-shadow: 0 8px 30px var(--green-dim); }
-        .tool-card .icon { font-size: 2.5rem; margin-bottom: 1rem; }
-        .tool-card h3 { font-size: 1rem; margin-bottom: 0.5rem; }
-        .tool-card p { font-size: 0.8rem; color: var(--text-dim); }
-        .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
-        @media (max-width: 768px) {
-            .two-col { grid-template-columns: 1fr; }
-            header { padding: 1rem; flex-direction: column; gap: 1rem; }
-            .main { padding: 1rem; }
-            .hero h1 { font-size: 2rem; }
-            .tabs { padding: 0 1rem; }
+
+        .tool-card:hover {
+            border-color: var(--green);
+            transform: translateY(-3px);
+            box-shadow: 0 6px 24px var(--green-dim);
         }
-        .about-section { max-width: 700px; margin: 0 auto; line-height: 1.8; }
-        .about-section h2 { font-size: 1.8rem; margin-bottom: 1.5rem; color: var(--green); }
-        .tech-stack { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1rem; }
-        .terminal {
-            background: #0d1117; border: 1px solid var(--border); border-radius: 8px;
-            padding: 1rem 1.2rem; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; margin-top: 1rem;
+
+        .tool-card .icon {
+            font-size: 2rem;
+            margin-bottom: 0.75rem;
         }
-        .terminal .prompt { color: var(--green); }
-        .terminal .cmd { color: var(--text); }
-        .terminal .output { color: var(--text-dim); }
+
+        .tool-card h3 {
+            font-size: 1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .tool-card p {
+            font-size: 0.85rem;
+            color: var(--text-dim);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1rem;
+        }
+
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 1.25rem;
+        }
+
+        .card h3 {
+            color: var(--green);
+            margin-bottom: 1rem;
+            font-size: 1rem;
+        }
+
+        input,
+        select,
+        textarea {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            font-family: 'JetBrains Mono', 'Noto Sans Thai', monospace;
+            font-size: 0.9rem;
+            margin-bottom: 0.9rem;
+        }
+
+        button {
+            padding: 0.75rem 1.5rem;
+            background: linear-gradient(135deg, var(--green), #00cc6a);
+            color: #000;
+            border: none;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        button.secondary {
+            background: transparent;
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .result-box {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            white-space: pre-wrap;
+            word-break: break-word;
+            min-height: 60px;
+        }
+
+        .result-box.success {
+            border-color: var(--green);
+        }
+
+        .result-box.error {
+            border-color: var(--red);
+        }
+
+        .tag {
+            display: inline-block;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            margin: 0.2rem 0.2rem 0.2rem 0;
+            background: var(--surface2);
+            color: var(--text-dim);
+        }
+
+        .tag.green {
+            background: var(--green-dim);
+            color: var(--green);
+        }
+
+        .tag.red {
+            background: #ff336633;
+            color: var(--red);
+        }
+
+        .tag.yellow {
+            background: #ffcc0033;
+            color: var(--yellow);
+        }
+
+        .tag.orange {
+            background: #ff9c4033;
+            color: var(--orange);
+        }
+
+        .hash-row {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.6rem;
+            background: var(--surface2);
+            border-radius: 6px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .hash-row .algo {
+            min-width: 70px;
+            color: var(--cyan);
+            font-weight: 700;
+        }
+
+        .hash-row .value {
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        th,
+        td {
+            padding: 0.7rem;
+            border: 1px solid var(--border);
+            text-align: left;
+        }
+
+        th {
+            background: var(--surface2);
+        }
+
         footer {
-            text-align: center; padding: 2rem; border-top: 1px solid var(--border);
-            font-size: 0.75rem; color: var(--text-dim); font-family: 'Noto Sans Thai', 'JetBrains Mono', monospace;
+            text-align: center;
+            padding: 2rem;
+            border-top: 1px solid var(--border);
+            color: var(--text-dim);
+            font-size: 0.8rem;
+        }
+
+        @media (max-width: 768px) {
+            header {
+                padding: 1rem;
+            }
+
+            .tabs {
+                padding: 0 1rem;
+            }
+
+            .main {
+                padding: 1rem;
+            }
         }
     </style>
 </head>
+
 <body>
     <div class="matrix-bg"></div>
     <div class="glow-line"></div>
@@ -184,7 +425,7 @@
         <div class="logo">&gt;_ CyberShield<span>.tool</span></div>
         <div class="status-bar">
             <span><span class="dot"></span>ระบบออนไลน์</span>
-            <span>v1.0.0</span>
+            <span>v1.1.0</span>
         </div>
     </header>
 
@@ -193,167 +434,148 @@
         <button class="tab" onclick="showPanel('password')">วิเคราะห์รหัสผ่าน</button>
         <button class="tab" onclick="showPanel('encryption')">เข้ารหัส</button>
         <button class="tab" onclick="showPanel('hashing')">แฮช</button>
+        <button class="tab" onclick="showPanel('risk')">Risk Assessment</button>
+        <button class="tab" onclick="showPanel('dashboard')">Security Dashboard</button>
+        <button class="tab" onclick="showPanel('report')">Security Report</button>
         <button class="tab" onclick="showPanel('about')">เกี่ยวกับ</button>
     </div>
 
     <div class="main">
-        <!-- หน้าแรก -->
         <div class="panel active" id="home">
             <div class="hero">
                 <h1>CyberShield</h1>
-                <p>เครื่องมือรักษาความปลอดภัยไซเบอร์ครบวงจร แสดงทักษะด้าน Network Security, Cryptography และ Ethical Hacking</p>
+                <p>เครื่องมือรักษาความปลอดภัยไซเบอร์ครบวงจร</p>
             </div>
             <div class="tools-grid">
                 <div class="tool-card" onclick="showPanel('password')">
-                    <div class="icon">&#128274;</div>
+                    <div class="icon">🔐</div>
                     <h3>วิเคราะห์รหัสผ่าน</h3>
-                    <p>ตรวจความแรง คำนวณ entropy และเวลาที่จะถูกแคร็ก</p>
+                    <p>ตรวจความแรงของรหัสผ่าน</p>
                 </div>
                 <div class="tool-card" onclick="showPanel('encryption')">
-                    <div class="icon">&#128273;</div>
+                    <div class="icon">🔒</div>
                     <h3>เครื่องมือเข้ารหัส</h3>
-                    <p>Caesar, Vigenere, Base64 และอัลกอริทึมแฮช</p>
+                    <p>Caesar, Vigenere, Base64 & Hash</p>
                 </div>
-                <div class="tool-card" onclick="showPanel('hashing')">
-                    <div class="icon">#</div>
-                    <h3>เปรียบเทียบแฮช</h3>
-                    <p>เทียบ MD5, SHA-1, SHA-256 และ SHA-512</p>
+                <div class="tool-card" onclick="showPanel('risk')">
+                    <div class="icon">⚠️</div>
+                    <h3>Risk Assessment Engine</h3>
+                    <p>ประเมินความเสี่ยงแบบ Likelihood × Impact</p>
                 </div>
-                <div class="tool-card">
-                    <div class="icon">&#127760;</div>
-                    <h3>สแกนพอร์ต</h3>
-                    <p>สแกนพอร์ตและ reconnaissance เครือข่าย (CLI)</p>
+                <div class="tool-card" onclick="showPanel('dashboard')">
+                    <div class="icon">📊</div>
+                    <h3>Security Dashboard</h3>
+                    <p>แสดงภาพรวมความปลอดภัย</p>
                 </div>
-            </div>
-
-            <div class="terminal" style="max-width: 700px; margin: 3rem auto 0;">
-                <div><span class="prompt">$</span> <span class="cmd">python dashboard.py</span></div>
-                <div class="output"> * กำลังรันที่ http://127.0.0.1:5000</div>
-                <div class="output"> * Debug mode: เปิดอยู่</div>
-                <div><span class="prompt">$</span> <span class="cmd">python -m modules.port_scanner</span></div>
-                <div class="output"> ผลการสแกน scanme.nmap.org</div>
-                <div class="output">   Port    22 | OPEN  | SSH</div>
-                <div class="output">   Port    80 | OPEN  | HTTP</div>
-                <div class="output">   พอร์ตที่เปิดทั้งหมด: 2</div>
+                <div class="tool-card" onclick="showPanel('report')">
+                    <div class="icon">📄</div>
+                    <h3>Automated Security Report</h3>
+                    <p>สร้างรายงานอัตโนมัติ</p>
+                </div>
             </div>
         </div>
 
-        <!-- วิเคราะห์รหัสผ่าน -->
         <div class="panel" id="password">
-            <div class="two-col">
+            <div class="grid">
                 <div class="card">
-                    <h3>&#128274; วิเคราะห์ความแรงรหัสผ่าน</h3>
-                    <input type="password" id="pwd-input" placeholder="พิมพ์รหัสผ่านที่ต้องการวิเคราะห์..." oninput="analyzePassword()">
-                    <div class="strength-bar">
-                        <div class="strength-fill" id="strength-fill" style="width:0%; background: var(--red);"></div>
-                    </div>
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:0.5rem;">
-                        <span id="strength-label" style="font-family:'JetBrains Mono'; font-size:0.9rem; font-weight:700;"></span>
-                        <span id="score-label" style="font-family:'JetBrains Mono'; font-size:0.75rem; color:var(--text-dim);"></span>
-                    </div>
-                </div>
-                <div class="card">
-                    <h3>&#9201; เวลาที่ใช้แคร็ก</h3>
-                    <div class="stat-value" id="crack-time">--</div>
-                    <div class="stat-label">เวลาโดยประมาณถ้าถูกโจมตีแบบ offline</div>
-                    <div style="margin-top:1rem;">
-                        <span class="stat-label">Entropy: </span>
-                        <span id="entropy-val" style="font-family:'JetBrains Mono'; color:var(--cyan);">-- bits</span>
-                    </div>
-                </div>
-            </div>
-            <div class="grid" style="margin-top:1.5rem;">
-                <div class="card">
-                    <h3>&#9989; วิเคราะห์ตัวอักษร</h3>
-                    <div id="char-tags" style="display:flex; flex-wrap:wrap; gap:0.5rem;"></div>
-                </div>
-                <div class="card">
-                    <h3>&#128161; คำแนะนำ</h3>
-                    <div id="feedback-list" style="font-size:0.85rem; color:var(--text-dim);"></div>
+                    <h3>🔐 วิเคราะห์รหัสผ่าน</h3>
+                    <input type="password" id="pwd-input" placeholder="พิมพ์รหัสผ่าน..." oninput="analyzePassword()">
+                    <div id="pwd-result" class="result-box"></div>
                 </div>
             </div>
         </div>
 
-        <!-- เข้ารหัส -->
         <div class="panel" id="encryption">
-            <div class="two-col">
+            <div class="grid">
                 <div class="card">
-                    <h3>&#128273; เข้ารหัส / แฮช</h3>
-                    <input type="text" id="enc-input" placeholder="พิมพ์ข้อความที่ต้องการเข้ารหัส...">
-                    <input type="text" id="enc-key" placeholder="คีย์ (ตัวเลขสำหรับ Caesar, คำสำหรับ Vigenere)">
+                    <h3>🔒 เข้ารหัส / แฮช</h3>
+                    <input type="text" id="enc-input" placeholder="ข้อความ">
+                    <input type="text" id="enc-key" placeholder="คีย์ (Caesar/Vigenere)">
                     <select id="enc-algo">
-                        <option value="caesar">Caesar Cipher</option>
-                        <option value="vigenere">Vigenere Cipher</option>
-                        <option value="base64">Base64 Encode</option>
-                        <option value="md5">MD5 Hash</option>
-                        <option value="sha256">SHA-256 Hash</option>
+                        <option value="caesar">Caesar</option>
+                        <option value="vigenere">Vigenere</option>
+                        <option value="base64">Base64</option>
+                        <option value="md5">MD5</option>
+                        <option value="sha1">SHA-1</option>
+                        <option value="sha256">SHA-256</option>
+                        <option value="sha512">SHA-512</option>
                     </select>
                     <button onclick="encryptText()">เข้ารหัส</button>
-                    <div class="result-box" id="enc-result" style="margin-top:1rem;"></div>
+                    <div id="enc-result" class="result-box" style="margin-top:1rem;"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel" id="hashing">
+            <div class="card">
+                <h3># เปรียบเทียบแฮช</h3>
+                <input type="text" id="hash-input" placeholder="ข้อความ..." oninput="compareHashes()">
+                <div id="hash-results"></div>
+            </div>
+        </div>
+
+        <div class="panel" id="risk">
+            <div class="grid">
+                <div class="card">
+                    <h3>⚠️ Risk Assessment Engine</h3>
+                    <input type="text" id="risk-asset" placeholder="ชื่อทรัพย์สิน">
+                    <select id="risk-likely">
+                        <option value="1">ต่ำ (1)</option>
+                        <option value="2">ปานกลาง-ต่ำ (2)</option>
+                        <option value="3">ปานกลาง (3)</option>
+                        <option value="4">สูง (4)</option>
+                        <option value="5">สูงมาก (5)</option>
+                    </select>
+                    <select id="risk-impact">
+                        <option value="1">ต่ำ (1)</option>
+                        <option value="2">ปานกลาง (2)</option>
+                        <option value="3">สำคัญ (3)</option>
+                        <option value="4">รุนแรง (4)</option>
+                        <option value="5">วิกฤติ (5)</option>
+                    </select>
+                    <textarea id="risk-desc" placeholder="รายละเอียดความเสี่ยง"></textarea>
+                    <button onclick="addRisk()">เพิ่มความเสี่ยง</button>
                 </div>
                 <div class="card">
-                    <h3>&#128295; ข้อมูลอ้างอิง</h3>
-                    <div style="font-size:0.85rem; color:var(--text-dim); line-height:2.2;">
-                        <div><span class="tag cyan">CAESAR</span> เลื่อนตัวอักษรแต่ละตัวตามจำนวนที่กำหนด</div>
-                        <div><span class="tag cyan">VIGENERE</span> แทนที่ตัวอักษรหลายแบบด้วยคีย์เวิร์ด</div>
-                        <div><span class="tag cyan">BASE64</span> เปลี่ยนข้อมูลไบนารีเป็นข้อความ (ไม่ใช่การเข้ารหัส)</div>
-                        <div><span class="tag yellow">MD5</span> แฮช 128 บิต (ถูกแคร็กแล้ว ใช้เฉพาะ checksum)</div>
-                        <div><span class="tag green">SHA-256</span> แฮช 256 บิต ใช้ในงานเข้ารหัส</div>
+                    <h3>รายการความเสี่ยง</h3>
+                    <div id="risk-list"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel" id="dashboard">
+            <div class="grid">
+                <div class="card">
+                    <h3>📊 Security Dashboard</h3>
+                    <div class="chart-container">
+                        <canvas id="riskChart"></canvas>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- แฮช -->
-        <div class="panel" id="hashing">
-            <div class="card" style="max-width:700px;">
-                <h3># เปรียบเทียบแฮช</h3>
-                <input type="text" id="hash-input" placeholder="พิมพ์ข้อความที่ต้องการแฮช..." oninput="compareHashes()">
-                <div class="hash-grid" id="hash-results">
-                    <div class="hash-row"><span class="algo">MD5</span><span class="value">--</span></div>
-                    <div class="hash-row"><span class="algo">SHA-1</span><span class="value">--</span></div>
-                    <div class="hash-row"><span class="algo">SHA-256</span><span class="value">--</span></div>
-                    <div class="hash-row"><span class="algo">SHA-512</span><span class="value">--</span></div>
+        <div class="panel" id="report">
+            <div class="card">
+                <h3>📄 Automated Security Report</h3>
+                <div class="btn-group">
+                    <button onclick="generateReport()">สร้างรายงาน</button>
+                    <button class="secondary" onclick="exportPDF()">Export PDF</button>
+                    <button class="secondary" onclick="exportJSON()">Export JSON</button>
                 </div>
+                <div id="report-content" style="margin-top:1rem; background:var(--surface2); padding:1rem; border-radius:8px;"></div>
             </div>
         </div>
 
-        <!-- เกี่ยวกับ -->
         <div class="panel" id="about">
-            <div class="about-section">
-                <h2>เกี่ยวกับโปรเจคนี้</h2>
-                <p style="color:var(--text-dim); margin-bottom:1.5rem;">
-                    CyberShield เป็นโปรเจค Portfolio ด้าน Cybersecurity ที่สร้างขึ้นเพื่อแสดงทักษะจริงทางด้าน
-                    ความปลอดภัยเครือข่าย, การเข้ารหัสข้อมูล และ Ethical Haking พัฒนาขึ้นสำหรับการสมัครเข้าศึกษาต่อ
-                    สาขาวิศวกรรมคอมพิวเตอร์ (CEDT) จุฬาลงกรณ์มหาวิทยาลัย
-                </p>
-                <h3 style="color:var(--cyan); margin-bottom:0.75rem;">ทักษะที่แสดง</h3>
-                <div class="tech-stack">
-                    <span class="tag green">Python</span>
-                    <span class="tag green">Network Security</span>
-                    <span class="tag green">Cryptography</span>
-                    <span class="tag cyan">Flask</span>
-                    <span class="tag cyan">HTML/CSS/JS</span>
-                    <span class="tag cyan">Socket Programming</span>
-                    <span class="tag yellow">Packet Analysis</span>
-                    <span class="tag yellow">Hash Algorithms</span>
-                    <span class="tag purple" style="background:#a855f733;color:var(--purple);">Ethical Hacking</span>
-                </div>
-                <h3 style="color:var(--cyan); margin:2rem 0 0.75rem;">เครื่องมือที่มี</h3>
-                <div style="color:var(--text-dim); font-size:0.9rem; line-height:2.2;">
-                    <div>&#9658; Port Scanner - สแกนพอร์ต TCP หลาย threads พร้อม grab banner</div>
-                    <div>&#9658; Packet Analyzer - จับและวิเคราะห์ทราฟิกเครือข่าย</div>
-                    <div>&#9658; Password Analyzer - วิเคราะห์ความแรงพร้อมคำนวณ entropy</div>
-                    <div>&#9658; Encryption Suite - อัลกอริทึมเข้ารหัสทั้งแบบคลาสสิกและสมัยใหม่</div>
-                    <div>&#9658; Subdomain Scanner - สแกน subdomain ด้วย async</div>
-                    <div>&#9658; Hash Cracker - สาธิต dictionary attack และ brute force</div>
-                </div>
+            <div class="card">
+                <h3>เกี่ยวกับ</h3>
+                <p style="color:var(--text-dim)">CyberShield v1.1.0 - เครื่องมือเพื่อการศึกษาเท่านั้น</p>
             </div>
         </div>
     </div>
 
     <footer>
-        CyberShield v1.0.0 | สร้างด้วย Python & &#9889; | ใช้เพื่อการศึกษาเท่านั้น
+        CyberShield v1.1.0 | สร้างด้วย HTML/CSS/JS
     </footer>
 
     <script>
@@ -361,107 +583,183 @@
             document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             document.getElementById(id).classList.add('active');
-            const tabNames = {'home':'หน้าแรก','password':'วิเคราะห์รหัสผ่าน','encryption':'เข้ารหัส','hashing':'แฮช','about':'เกี่ยวกับ'};
-            document.querySelectorAll('.tab').forEach(t => {
-                if (t.textContent === tabNames[id]) t.classList.add('active');
-            });
+            const tabMap = { 'home': 0, 'password': 1, 'encryption': 2, 'hashing': 3, 'risk': 4, 'dashboard': 5, 'report': 6, 'about': 7 };
+            const idx = tabMap[id];
+            if (idx !== undefined) document.querySelectorAll('.tab')[idx].classList.add('active');
         }
 
-        const strengthLabels = {0:'อ่อนมาก', 1:'อ่อน', 2:'พอใช้', 3:'แข็งแรง', 4:'แข็งแรงมาก'};
-        const feedbackTH = {
-            'Use at least 8 characters': 'ใช้ตัวอักษรอย่างน้อย 8 ตัว',
-            'Mix uppercase and lowercase letters': 'ผสมตัวพิมพ์เล็กและตัวพิมพ์ใหญ่',
-            'Add numbers': 'เพิ่มตัวเลข',
-            'Add special characters': 'เพิ่มอักขระพิเศษ (!@#$%^&*)',
-            'Add uppercase letters': 'เพิ่มตัวพิมพ์ใหญ่',
-        };
-
-        let passwordTimeout;
-        function analyzePassword() {
-            clearTimeout(passwordTimeout);
-            const pwd = document.getElementById('pwd-input').value;
-            if (!pwd) {
-                document.getElementById('strength-fill').style.width = '0%';
-                document.getElementById('strength-label').textContent = '';
-                document.getElementById('crack-time').textContent = '--';
-                document.getElementById('entropy-val').textContent = '-- bits';
-                document.getElementById('char-tags').innerHTML = '';
-                document.getElementById('feedback-list').innerHTML = '';
-                return;
+        async function shaHex(algo, text) {
+            try {
+                const enc = new TextEncoder().encode(text);
+                const h = await crypto.subtle.digest(algo, enc);
+                return Array.from(new Uint8Array(h)).map(b => b.toString(16).padStart(2, '0')).join('');
+            } catch (e) {
+                return '--';
             }
-            passwordTimeout = setTimeout(() => {
-                fetch('/api/password/analyze', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({password: pwd})
-                }).then(r => r.json()).then(data => {
-                    const colors = ['#ff3366', '#ff6633', '#ffcc00', '#00cc6a', '#00ff88'];
-                    const pct = ((data.score + 1) / 5) * 100;
-                    document.getElementById('strength-fill').style.width = pct + '%';
-                    document.getElementById('strength-fill').style.background = colors[data.score];
-                    const label = strengthLabels[data.score] || data.strength;
-                    document.getElementById('strength-label').textContent = label;
-                    document.getElementById('strength-label').style.color = colors[data.score];
-                    document.getElementById('score-label').textContent = data.score + '/4';
-                    document.getElementById('crack-time').textContent = data.crack_time;
-                    document.getElementById('entropy-val').textContent = data.entropy + ' bits';
-
-                    let tags = '';
-                    tags += data.has_upper ? '<span class="tag green">A-Z</span>' : '<span class="tag red">A-Z</span>';
-                    tags += data.has_lower ? '<span class="tag green">a-z</span>' : '<span class="tag red">a-z</span>';
-                    tags += data.has_digit ? '<span class="tag green">0-9</span>' : '<span class="tag red">0-9</span>';
-                    tags += data.has_special ? '<span class="tag green">!@#</span>' : '<span class="tag red">!@#</span>';
-                    document.getElementById('char-tags').innerHTML = tags;
-
-                    let fb = data.feedback.length
-                        ? data.feedback.map(f => '&#9888; ' + (feedbackTH[f] || f)).join('<br>')
-                        : '&#10003; ดีมาก แข็งแรง!';
-                    document.getElementById('feedback-list').innerHTML = fb;
-                });
-            }, 200);
         }
 
-        function encryptText() {
+        function analyzePassword() {
+            const pwd = document.getElementById('pwd-input').value;
+            const el = document.getElementById('pwd-result');
+            if (!pwd) { el.textContent = ''; return; }
+            let score = 0;
+            if (pwd.length >= 8) score++;
+            if (pwd.length >= 12) score++;
+            if (/[A-Z]/.test(pwd) && /[a-z]/.test(pwd)) score++;
+            if (/\d/.test(pwd)) score++;
+            if (/[!@#$%^&*]/.test(pwd)) score++;
+            score = Math.min(score, 4);
+            const labels = ['อ่อนมาก', 'อ่อน', 'พอใช้', 'แข็งแรง', 'แข็งแรงมาก'];
+            el.textContent = 'คะแนน: ' + score + '/4 (' + labels[score] + ')\nความยาว: ' + pwd.length;
+        }
+
+        async function encryptText() {
             const text = document.getElementById('enc-input').value;
             const key = document.getElementById('enc-key').value;
             const algo = document.getElementById('enc-algo').value;
-            if (!text) return;
-            fetch('/api/encrypt', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({text, key, algorithm: algo})
-            }).then(r => r.json()).then(data => {
-                const el = document.getElementById('enc-result');
-                if (data.ciphertext) {
-                    el.className = 'result-box success';
-                    el.textContent = data.algorithm + ':\n' + data.ciphertext;
-                } else {
-                    el.className = 'result-box error';
-                    el.textContent = data.error;
+            const el = document.getElementById('enc-result');
+            if (!text) { el.textContent = ''; return; }
+            if (algo === 'caesar') {
+                let shift = /^\d+$/.test(key) ? parseInt(key) % 26 : 3;
+                let res = '';
+                for (let c of text) {
+                    if (c >= 'A' && c <= 'Z') res += String.fromCharCode((c.charCodeAt(0) - 65 + shift + 26) % 26 + 65);
+                    else if (c >= 'a' && c <= 'z') res += String.fromCharCode((c.charCodeAt(0) - 97 + shift + 26) % 26 + 97);
+                    else res += c;
                 }
+                el.textContent = 'Caesar:\n' + res;
+            } else if (algo === 'vigenere') {
+                let k = (key || 'key').toLowerCase().replace(/[^a-z]/g, '') || 'key';
+                let res = [], ki = 0;
+                for (let c of text) {
+                    if ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z')) {
+                        let base = c >= 'A' && c <= 'Z' ? 65 : 97;
+                        let shift = k.charCodeAt(ki % k.length) - 97;
+                        res.push(String.fromCharCode((c.charCodeAt(0) - base + shift + 26) % 26 + base));
+                        ki++;
+                    } else res.push(c);
+                }
+                el.textContent = 'Vigenere:\n' + res.join('');
+            } else if (algo === 'base64') {
+                el.textContent = 'Base64:\n' + btoa(unescape(encodeURIComponent(text)));
+            } else if (algo === 'md5') {
+                el.textContent = 'MD5:\n' + (typeof md5 !== 'undefined' ? md5(text) : '--');
+            } else if (algo === 'sha1') {
+                const h = await shaHex('SHA-1', text);
+                el.textContent = 'SHA-1:\n' + h;
+            } else if (algo === 'sha256') {
+                const h = await shaHex('SHA-256', text);
+                el.textContent = 'SHA-256:\n' + h;
+            } else if (algo === 'sha512') {
+                const h = await shaHex('SHA-512', text);
+                el.textContent = 'SHA-512:\n' + h;
+            }
+        }
+
+        async function compareHashes() {
+            const text = document.getElementById('hash-input').value;
+            const el = document.getElementById('hash-results');
+            if (!text) { el.innerHTML = ''; return; }
+            const [m, s1, s2, s5] = await Promise.all([
+                typeof md5 !== 'undefined' ? md5(text) : '--',
+                shaHex('SHA-1', text),
+                shaHex('SHA-256', text),
+                shaHex('SHA-512', text)
+            ]);
+            el.innerHTML = '<div class="hash-row"><span class="algo">MD5</span><span class="value">' + m + '</span></div>' +
+                '<div class="hash-row"><span class="algo">SHA-1</span><span class="value">' + s1 + '</span></div>' +
+                '<div class="hash-row"><span class="algo">SHA-256</span><span class="value">' + s2 + '</span></div>' +
+                '<div class="hash-row"><span class="algo">SHA-512</span><span class="value">' + s5 + '</span></div>';
+        }
+
+        let risks = [];
+        function addRisk() {
+            const asset = document.getElementById('risk-asset').value;
+            const l = parseInt(document.getElementById('risk-likely').value);
+            const i = parseInt(document.getElementById('risk-impact').value);
+            const desc = document.getElementById('risk-desc').value;
+            if (!asset) return;
+            const score = l * i;
+            risks.push({ asset, l, i, score, desc, date: new Date().toISOString() });
+            renderRisks();
+        }
+
+        function renderRisks() {
+            const el = document.getElementById('risk-list');
+            if (risks.length === 0) { el.innerHTML = '<span style="color:var(--text-dim)">ยังไม่มีข้อมูล</span>'; return; }
+            let html = '<table><tr><th>ทรัพย์สิน</th><th>L×I</th><th>คะแนน</th><th>ระดับ</th></tr>';
+            risks.forEach(r => {
+                let level = 'ต่ำ';
+                if (r.score >= 15) level = 'วิกฤติ';
+                else if (r.score >= 10) level = 'สูง';
+                else if (r.score >= 6) level = 'ปานกลาง';
+                else level = 'ต่ำ';
+                html += '<tr><td>' + r.asset + '</td><td>' + r.l + '×' + r.i + '</td><td>' + r.score + '</td><td>' + level + '</td></tr>';
+            });
+            html += '</table>';
+            el.innerHTML = html;
+            updateChart();
+        }
+
+        let riskChart = null;
+        function updateChart() {
+            const ctx = document.getElementById('riskChart');
+            if (!ctx) return;
+            const levels = { 'ต่ำ': 0, 'ปานกลาง': 0, 'สูง': 0, 'วิกฤติ': 0 };
+            risks.forEach(r => {
+                if (r.score >= 15) levels['วิกฤติ']++;
+                else if (r.score >= 10) levels['สูง']++;
+                else if (r.score >= 6) levels['ปานกลาง']++;
+                else levels['ต่ำ']++;
+            });
+            if (riskChart) riskChart.destroy();
+            riskChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(levels),
+                    datasets: [{
+                        label: 'จำนวนความเสี่ยง',
+                        data: Object.values(levels),
+                        backgroundColor: ['#00ff88', '#ff9c40', '#ffcc00', '#ff3366']
+                    }]
+                },
+                options: { responsive: true, scales: { y: { ticks: { color: '#e0e0e0' } }, x: { ticks: { color: '#e0e0e0' } } } }
             });
         }
 
-        let hashTimeout;
-        function compareHashes() {
-            clearTimeout(hashTimeout);
-            const text = document.getElementById('hash-input').value;
-            if (!text) return;
-            hashTimeout = setTimeout(() => {
-                fetch('/api/hash/compare', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({text})
-                }).then(r => r.json()).then(data => {
-                    const algos = ['md5', 'sha1', 'sha256', 'sha512'];
-                    const labels = ['MD5', 'SHA-1', 'SHA-256', 'SHA-512'];
-                    let html = '';
-                    algos.forEach((a, i) => {
-                        html += '<div class="hash-row"><span class="algo">' + labels[i] + '</span><span class="value">' + data[a] + '</span></div>';
-                    });
-                    document.getElementById('hash-results').innerHTML = html;
+        let reportData = [];
+        function generateReport() {
+            reportData = risks.slice();
+            const el = document.getElementById('report-content');
+            let html = '<h2 style="color:var(--green); margin-bottom:1rem">Security Report</h2>';
+            html += '<p style="color:var(--text-dim)">วันที่: ' + new Date().toLocaleString('th-TH') + '</p>';
+            html += '<h3 style="margin-top:1rem">สรุปความเสี่ยง</h3>';
+            if (reportData.length === 0) html += '<p style="color:var(--text-dim)">ไม่มีข้อมูลความเสี่ยง</p>';
+            else {
+                html += '<table><tr><th>ทรัพย์สิน</th><th>รายละเอียด</th><th>คะแนน</th></tr>';
+                reportData.forEach(r => {
+                    html += '<tr><td>' + r.asset + '</td><td>' + (r.desc || '-') + '</td><td>' + r.score + '</td></tr>';
                 });
-            }, 200);
+                html += '</table>';
+            }
+            el.innerHTML = html;
+        }
+
+        function exportPDF() {
+            const el = document.getElementById('report-content');
+            if (!el.innerHTML) generateReport();
+            html2pdf().set({ margin: 10, filename: 'CyberShield_Report.pdf', html2canvas: { scale: 2 } }).from(el).save();
+        }
+
+        function exportJSON() {
+            const data = { generated: new Date().toISOString(), risks: risks };
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'CyberShield_Report.json';
+            a.click();
+            URL.revokeObjectURL(url);
         }
 
         document.addEventListener('keydown', (e) => {
@@ -469,4 +767,5 @@
         });
     </script>
 </body>
+
 </html>
