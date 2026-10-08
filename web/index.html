@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CyberShield - เครื่องมือรักษาความปลอดภัยไซเบอร์</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@300;400;600;700;900&family=Noto+Sans+Thai:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --bg: #0a0a0f;
+            --surface: #12121a;
+            --surface2: #1a1a25;
+            --border: #2a2a3a;
+            --green: #00ff88;
+            --green-dim: #00ff8833;
+            --cyan: #00d4ff;
+            --red: #ff3366;
+            --yellow: #ffcc00;
+            --purple: #a855f7;
+            --text: #e0e0e0;
+            --text-dim: #6b7280;
+        }
+        body {
+            font-family: 'Noto Sans Thai', 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        .matrix-bg {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: -1; opacity: 0.03;
+            background: repeating-linear-gradient(0deg, transparent, transparent 2px, var(--green) 2px, var(--green) 3px);
+        }
+        .glow-line {
+            position: fixed; top: 0; left: 0; width: 100%; height: 2px;
+            background: linear-gradient(90deg, transparent, var(--green), var(--cyan), var(--green), transparent);
+            z-index: 100; animation: glow-move 3s linear infinite;
+        }
+        @keyframes glow-move { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+        header {
+            padding: 2rem 3rem; border-bottom: 1px solid var(--border);
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .logo {
+            font-family: 'JetBrains Mono', monospace; font-size: 1.8rem; font-weight: 700;
+            background: linear-gradient(135deg, var(--green), var(--cyan));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .logo span { opacity: 0.5; }
+        .status-bar {
+            font-family: 'JetBrains Mono', monospace; font-size: 0.75rem;
+            color: var(--green); display: flex; gap: 1.5rem;
+        }
+        .status-bar .dot {
+            width: 8px; height: 8px; background: var(--green); border-radius: 50%;
+            display: inline-block; margin-right: 6px; animation: pulse 2s infinite;
+        }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+        .tabs {
+            display: flex; gap: 0; padding: 0 3rem;
+            border-bottom: 1px solid var(--border); overflow-x: auto;
+        }
+        .tab {
+            padding: 1rem 1.5rem; font-family: 'Noto Sans Thai', sans-serif;
+            font-size: 0.85rem; color: var(--text-dim); cursor: pointer;
+            border-bottom: 2px solid transparent; transition: all 0.2s;
+            white-space: nowrap; background: none;
+            border-top: none; border-left: none; border-right: none;
+        }
+        .tab:hover { color: var(--text); background: var(--surface); }
+        .tab.active { color: var(--green); border-bottom-color: var(--green); background: var(--surface); }
+        .main { padding: 2rem 3rem; }
+        .panel { display: none; animation: fadeIn 0.3s ease; }
+        .panel.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
+        .card {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: 12px; padding: 1.5rem; transition: border-color 0.2s;
+        }
+        .card:hover { border-color: var(--green); }
+        .card h3 {
+            font-family: 'Noto Sans Thai', 'JetBrains Mono', monospace;
+            font-size: 0.9rem; color: var(--green); margin-bottom: 1rem;
+            letter-spacing: 0.5px;
+        }
+        .stat-value {
+            font-size: 2.5rem; font-weight: 900;
+            background: linear-gradient(135deg, var(--green), var(--cyan));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .stat-label { font-size: 0.8rem; color: var(--text-dim); margin-top: 0.25rem; }
+        input, select {
+            width: 100%; padding: 0.8rem 1rem; background: var(--bg);
+            border: 1px solid var(--border); border-radius: 8px; color: var(--text);
+            font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;
+            margin-bottom: 1rem; outline: none; transition: border-color 0.2s;
+        }
+        input:focus, select:focus { border-color: var(--green); }
+        input::placeholder { color: var(--text-dim); }
+        select option { background: var(--surface); }
+        button {
+            padding: 0.8rem 2rem;
+            background: linear-gradient(135deg, var(--green), #00cc6a);
+            color: #000; border: none; border-radius: 8px;
+            font-family: 'Noto Sans Thai', 'JetBrains Mono', monospace;
+            font-size: 0.9rem; font-weight: 700; cursor: pointer;
+            transition: all 0.2s; letter-spacing: 0.5px;
+        }
+        button:hover { transform: translateY(-2px); box-shadow: 0 4px 20px var(--green-dim); }
+        button:active { transform: translateY(0); }
+        .result-box {
+            background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+            padding: 1.2rem; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem;
+            margin-top: 1rem; min-height: 60px; word-break: break-all; white-space: pre-wrap;
+        }
+        .result-box.success { border-color: var(--green); }
+        .result-box.error { border-color: var(--red); }
+        .strength-bar { height: 8px; background: var(--bg); border-radius: 4px; overflow: hidden; margin: 0.5rem 0; }
+        .strength-fill { height: 100%; border-radius: 4px; transition: width 0.5s ease, background 0.5s ease; }
+        .tag {
+            display: inline-block; padding: 0.25rem 0.6rem; border-radius: 4px;
+            font-size: 0.7rem; font-family: 'JetBrains Mono', monospace; margin-right: 0.5rem;
+        }
+        .tag.green { background: var(--green-dim); color: var(--green); }
+        .tag.red { background: #ff336633; color: var(--red); }
+        .tag.yellow { background: #ffcc0033; color: var(--yellow); }
+        .tag.cyan { background: #00d4ff33; color: var(--cyan); }
+        .hash-grid { display: grid; grid-template-columns: 1fr; gap: 0.5rem; }
+        .hash-row {
+            display: flex; align-items: center; gap: 0.75rem; padding: 0.6rem;
+            background: var(--surface2); border-radius: 6px;
+            font-family: 'JetBrains Mono', monospace; font-size: 0.75rem;
+        }
+        .hash-row .algo { min-width: 70px; color: var(--cyan); font-weight: 700; }
+        .hash-row .value { color: var(--text); overflow: hidden; text-overflow: ellipsis; }
+        .hero { text-align: center; padding: 4rem 0 3rem; }
+        .hero h1 {
+            font-size: 3.5rem; font-weight: 900;
+            background: linear-gradient(135deg, var(--green), var(--cyan), var(--purple));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 1rem;
+        }
+        .hero p { font-size: 1.1rem; color: var(--text-dim); max-width: 600px; margin: 0 auto; }
+        .tools-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-top: 2rem; }
+        .tool-card {
+            background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+            padding: 2rem; text-align: center; cursor: pointer; transition: all 0.3s;
+        }
+        .tool-card:hover { border-color: var(--green); transform: translateY(-4px); box-shadow: 0 8px 30px var(--green-dim); }
+        .tool-card .icon { font-size: 2.5rem; margin-bottom: 1rem; }
+        .tool-card h3 { font-size: 1rem; margin-bottom: 0.5rem; }
+        .tool-card p { font-size: 0.8rem; color: var(--text-dim); }
+        .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
+        @media (max-width: 768px) {
+            .two-col { grid-template-columns: 1fr; }
+            header { padding: 1rem; flex-direction: column; gap: 1rem; }
+            .main { padding: 1rem; }
+            .hero h1 { font-size: 2rem; }
+            .tabs { padding: 0 1rem; }
+        }
+        .about-section { max-width: 700px; margin: 0 auto; line-height: 1.8; }
+        .about-section h2 { font-size: 1.8rem; margin-bottom: 1.5rem; color: var(--green); }
+        .tech-stack { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1rem; }
+        .terminal {
+            background: #0d1117; border: 1px solid var(--border); border-radius: 8px;
+            padding: 1rem 1.2rem; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; margin-top: 1rem;
+        }
+        .terminal .prompt { color: var(--green); }
+        .terminal .cmd { color: var(--text); }
+        .terminal .output { color: var(--text-dim); }
+        footer {
+            text-align: center; padding: 2rem; border-top: 1px solid var(--border);
+            font-size: 0.75rem; color: var(--text-dim); font-family: 'Noto Sans Thai', 'JetBrains Mono', monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="matrix-bg"></div>
+    <div class="glow-line"></div>
+
+    <header>
+        <div class="logo">&gt;_ CyberShield<span>.tool</span></div>
+        <div class="status-bar">
+            <span><span class="dot"></span>ระบบออนไลน์</span>
+            <span>v1.0.0</span>
+        </div>
+    </header>
+
+    <div class="tabs">
+        <button class="tab active" onclick="showPanel('home')">หน้าแรก</button>
+        <button class="tab" onclick="showPanel('password')">วิเคราะห์รหัสผ่าน</button>
+        <button class="tab" onclick="showPanel('encryption')">เข้ารหัส</button>
+        <button class="tab" onclick="showPanel('hashing')">แฮช</button>
+        <button class="tab" onclick="showPanel('about')">เกี่ยวกับ</button>
+    </div>
+
+    <div class="main">
+        <!-- หน้าแรก -->
+        <div class="panel active" id="home">
+            <div class="hero">
+                <h1>CyberShield</h1>
+                <p>เครื่องมือรักษาความปลอดภัยไซเบอร์ครบวงจร แสดงทักษะด้าน Network Security, Cryptography และ Ethical Hacking</p>
+            </div>
+            <div class="tools-grid">
+                <div class="tool-card" onclick="showPanel('password')">
+                    <div class="icon">&#128274;</div>
+                    <h3>วิเคราะห์รหัสผ่าน</h3>
+                    <p>ตรวจความแรง คำนวณ entropy และเวลาที่จะถูกแคร็ก</p>
+                </div>
+                <div class="tool-card" onclick="showPanel('encryption')">
+                    <div class="icon">&#128273;</div>
+                    <h3>เครื่องมือเข้ารหัส</h3>
+                    <p>Caesar, Vigenere, Base64 และอัลกอริทึมแฮช</p>
+                </div>
+                <div class="tool-card" onclick="showPanel('hashing')">
+                    <div class="icon">#</div>
+                    <h3>เปรียบเทียบแฮช</h3>
+                    <p>เทียบ MD5, SHA-1, SHA-256 และ SHA-512</p>
+                </div>
+                <div class="tool-card">
+                    <div class="icon">&#127760;</div>
+                    <h3>สแกนพอร์ต</h3>
+                    <p>สแกนพอร์ตและ reconnaissance เครือข่าย (CLI)</p>
+                </div>
+            </div>
+
+            <div class="terminal" style="max-width: 700px; margin: 3rem auto 0;">
+                <div><span class="prompt">$</span> <span class="cmd">python dashboard.py</span></div>
+                <div class="output"> * กำลังรันที่ http://127.0.0.1:5000</div>
+                <div class="output"> * Debug mode: เปิดอยู่</div>
+                <div><span class="prompt">$</span> <span class="cmd">python -m modules.port_scanner</span></div>
+                <div class="output"> ผลการสแกน scanme.nmap.org</div>
+                <div class="output">   Port    22 | OPEN  | SSH</div>
+                <div class="output">   Port    80 | OPEN  | HTTP</div>
+                <div class="output">   พอร์ตที่เปิดทั้งหมด: 2</div>
+            </div>
+        </div>
+
+        <!-- วิเคราะห์รหัสผ่าน -->
+        <div class="panel" id="password">
+            <div class="two-col">
+                <div class="card">
+                    <h3>&#128274; วิเคราะห์ความแรงรหัสผ่าน</h3>
+                    <input type="password" id="pwd-input" placeholder="พิมพ์รหัสผ่านที่ต้องการวิเคราะห์..." oninput="analyzePassword()">
+                    <div class="strength-bar">
+                        <div class="strength-fill" id="strength-fill" style="width:0%; background: var(--red);"></div>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:0.5rem;">
+                        <span id="strength-label" style="font-family:'JetBrains Mono'; font-size:0.9rem; font-weight:700;"></span>
+                        <span id="score-label" style="font-family:'JetBrains Mono'; font-size:0.75rem; color:var(--text-dim);"></span>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3>&#9201; เวลาที่ใช้แคร็ก</h3>
+                    <div class="stat-value" id="crack-time">--</div>
+                    <div class="stat-label">เวลาโดยประมาณถ้าถูกโจมตีแบบ offline</div>
+                    <div style="margin-top:1rem;">
+                        <span class="stat-label">Entropy: </span>
+                        <span id="entropy-val" style="font-family:'JetBrains Mono'; color:var(--cyan);">-- bits</span>
+                    </div>
+                </div>
+            </div>
+            <div class="grid" style="margin-top:1.5rem;">
+                <div class="card">
+                    <h3>&#9989; วิเคราะห์ตัวอักษร</h3>
+                    <div id="char-tags" style="display:flex; flex-wrap:wrap; gap:0.5rem;"></div>
+                </div>
+                <div class="card">
+                    <h3>&#128161; คำแนะนำ</h3>
+                    <div id="feedback-list" style="font-size:0.85rem; color:var(--text-dim);"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- เข้ารหัส -->
+        <div class="panel" id="encryption">
+            <div class="two-col">
+                <div class="card">
+                    <h3>&#128273; เข้ารหัส / แฮช</h3>
+                    <input type="text" id="enc-input" placeholder="พิมพ์ข้อความที่ต้องการเข้ารหัส...">
+                    <input type="text" id="enc-key" placeholder="คีย์ (ตัวเลขสำหรับ Caesar, คำสำหรับ Vigenere)">
+                    <select id="enc-algo">
+                        <option value="caesar">Caesar Cipher</option>
+                        <option value="vigenere">Vigenere Cipher</option>
+                        <option value="base64">Base64 Encode</option>
+                        <option value="md5">MD5 Hash</option>
+                        <option value="sha256">SHA-256 Hash</option>
+                    </select>
+                    <button onclick="encryptText()">เข้ารหัส</button>
+                    <div class="result-box" id="enc-result" style="margin-top:1rem;"></div>
+                </div>
+                <div class="card">
+                    <h3>&#128295; ข้อมูลอ้างอิง</h3>
+                    <div style="font-size:0.85rem; color:var(--text-dim); line-height:2.2;">
+                        <div><span class="tag cyan">CAESAR</span> เลื่อนตัวอักษรแต่ละตัวตามจำนวนที่กำหนด</div>
+                        <div><span class="tag cyan">VIGENERE</span> แทนที่ตัวอักษรหลายแบบด้วยคีย์เวิร์ด</div>
+                        <div><span class="tag cyan">BASE64</span> เปลี่ยนข้อมูลไบนารีเป็นข้อความ (ไม่ใช่การเข้ารหัส)</div>
+                        <div><span class="tag yellow">MD5</span> แฮช 128 บิต (ถูกแคร็กแล้ว ใช้เฉพาะ checksum)</div>
+                        <div><span class="tag green">SHA-256</span> แฮช 256 บิต ใช้ในงานเข้ารหัส</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- แฮช -->
+        <div class="panel" id="hashing">
+            <div class="card" style="max-width:700px;">
+                <h3># เปรียบเทียบแฮช</h3>
+                <input type="text" id="hash-input" placeholder="พิมพ์ข้อความที่ต้องการแฮช..." oninput="compareHashes()">
+                <div class="hash-grid" id="hash-results">
+                    <div class="hash-row"><span class="algo">MD5</span><span class="value">--</span></div>
+                    <div class="hash-row"><span class="algo">SHA-1</span><span class="value">--</span></div>
+                    <div class="hash-row"><span class="algo">SHA-256</span><span class="value">--</span></div>
+                    <div class="hash-row"><span class="algo">SHA-512</span><span class="value">--</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- เกี่ยวกับ -->
+        <div class="panel" id="about">
+            <div class="about-section">
+                <h2>เกี่ยวกับโปรเจคนี้</h2>
+                <p style="color:var(--text-dim); margin-bottom:1.5rem;">
+                    CyberShield เป็นโปรเจค Portfolio ด้าน Cybersecurity ที่สร้างขึ้นเพื่อแสดงทักษะจริงทางด้าน
+                    ความปลอดภัยเครือข่าย, การเข้ารหัสข้อมูล และ Ethical Haking พัฒนาขึ้นสำหรับการสมัครเข้าศึกษาต่อ
+                    สาขาวิศวกรรมคอมพิวเตอร์ (CEDT) จุฬาลงกรณ์มหาวิทยาลัย
+                </p>
+                <h3 style="color:var(--cyan); margin-bottom:0.75rem;">ทักษะที่แสดง</h3>
+                <div class="tech-stack">
+                    <span class="tag green">Python</span>
+                    <span class="tag green">Network Security</span>
+                    <span class="tag green">Cryptography</span>
+                    <span class="tag cyan">Flask</span>
+                    <span class="tag cyan">HTML/CSS/JS</span>
+                    <span class="tag cyan">Socket Programming</span>
+                    <span class="tag yellow">Packet Analysis</span>
+                    <span class="tag yellow">Hash Algorithms</span>
+                    <span class="tag purple" style="background:#a855f733;color:var(--purple);">Ethical Hacking</span>
+                </div>
+                <h3 style="color:var(--cyan); margin:2rem 0 0.75rem;">เครื่องมือที่มี</h3>
+                <div style="color:var(--text-dim); font-size:0.9rem; line-height:2.2;">
+                    <div>&#9658; Port Scanner - สแกนพอร์ต TCP หลาย threads พร้อม grab banner</div>
+                    <div>&#9658; Packet Analyzer - จับและวิเคราะห์ทราฟิกเครือข่าย</div>
+                    <div>&#9658; Password Analyzer - วิเคราะห์ความแรงพร้อมคำนวณ entropy</div>
+                    <div>&#9658; Encryption Suite - อัลกอริทึมเข้ารหัสทั้งแบบคลาสสิกและสมัยใหม่</div>
+                    <div>&#9658; Subdomain Scanner - สแกน subdomain ด้วย async</div>
+                    <div>&#9658; Hash Cracker - สาธิต dictionary attack และ brute force</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        CyberShield v1.0.0 | สร้างด้วย Python & &#9889; | ใช้เพื่อการศึกษาเท่านั้น
+    </footer>
+
+    <script>
+        function showPanel(id) {
+            document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            const tabNames = {'home':'หน้าแรก','password':'วิเคราะห์รหัสผ่าน','encryption':'เข้ารหัส','hashing':'แฮช','about':'เกี่ยวกับ'};
+            document.querySelectorAll('.tab').forEach(t => {
+                if (t.textContent === tabNames[id]) t.classList.add('active');
+            });
+        }
+
+        const strengthLabels = {0:'อ่อนมาก', 1:'อ่อน', 2:'พอใช้', 3:'แข็งแรง', 4:'แข็งแรงมาก'};
+        const feedbackTH = {
+            'Use at least 8 characters': 'ใช้ตัวอักษรอย่างน้อย 8 ตัว',
+            'Mix uppercase and lowercase letters': 'ผสมตัวพิมพ์เล็กและตัวพิมพ์ใหญ่',
+            'Add numbers': 'เพิ่มตัวเลข',
+            'Add special characters': 'เพิ่มอักขระพิเศษ (!@#$%^&*)',
+            'Add uppercase letters': 'เพิ่มตัวพิมพ์ใหญ่',
+        };
+
+        let passwordTimeout;
+        function analyzePassword() {
+            clearTimeout(passwordTimeout);
+            const pwd = document.getElementById('pwd-input').value;
+            if (!pwd) {
+                document.getElementById('strength-fill').style.width = '0%';
+                document.getElementById('strength-label').textContent = '';
+                document.getElementById('crack-time').textContent = '--';
+                document.getElementById('entropy-val').textContent = '-- bits';
+                document.getElementById('char-tags').innerHTML = '';
+                document.getElementById('feedback-list').innerHTML = '';
+                return;
+            }
+            passwordTimeout = setTimeout(() => {
+                fetch('/api/password/analyze', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({password: pwd})
+                }).then(r => r.json()).then(data => {
+                    const colors = ['#ff3366', '#ff6633', '#ffcc00', '#00cc6a', '#00ff88'];
+                    const pct = ((data.score + 1) / 5) * 100;
+                    document.getElementById('strength-fill').style.width = pct + '%';
+                    document.getElementById('strength-fill').style.background = colors[data.score];
+                    const label = strengthLabels[data.score] || data.strength;
+                    document.getElementById('strength-label').textContent = label;
+                    document.getElementById('strength-label').style.color = colors[data.score];
+                    document.getElementById('score-label').textContent = data.score + '/4';
+                    document.getElementById('crack-time').textContent = data.crack_time;
+                    document.getElementById('entropy-val').textContent = data.entropy + ' bits';
+
+                    let tags = '';
+                    tags += data.has_upper ? '<span class="tag green">A-Z</span>' : '<span class="tag red">A-Z</span>';
+                    tags += data.has_lower ? '<span class="tag green">a-z</span>' : '<span class="tag red">a-z</span>';
+                    tags += data.has_digit ? '<span class="tag green">0-9</span>' : '<span class="tag red">0-9</span>';
+                    tags += data.has_special ? '<span class="tag green">!@#</span>' : '<span class="tag red">!@#</span>';
+                    document.getElementById('char-tags').innerHTML = tags;
+
+                    let fb = data.feedback.length
+                        ? data.feedback.map(f => '&#9888; ' + (feedbackTH[f] || f)).join('<br>')
+                        : '&#10003; ดีมาก แข็งแรง!';
+                    document.getElementById('feedback-list').innerHTML = fb;
+                });
+            }, 200);
+        }
+
+        function encryptText() {
+            const text = document.getElementById('enc-input').value;
+            const key = document.getElementById('enc-key').value;
+            const algo = document.getElementById('enc-algo').value;
+            if (!text) return;
+            fetch('/api/encrypt', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({text, key, algorithm: algo})
+            }).then(r => r.json()).then(data => {
+                const el = document.getElementById('enc-result');
+                if (data.ciphertext) {
+                    el.className = 'result-box success';
+                    el.textContent = data.algorithm + ':\n' + data.ciphertext;
+                } else {
+                    el.className = 'result-box error';
+                    el.textContent = data.error;
+                }
+            });
+        }
+
+        let hashTimeout;
+        function compareHashes() {
+            clearTimeout(hashTimeout);
+            const text = document.getElementById('hash-input').value;
+            if (!text) return;
+            hashTimeout = setTimeout(() => {
+                fetch('/api/hash/compare', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({text})
+                }).then(r => r.json()).then(data => {
+                    const algos = ['md5', 'sha1', 'sha256', 'sha512'];
+                    const labels = ['MD5', 'SHA-1', 'SHA-256', 'SHA-512'];
+                    let html = '';
+                    algos.forEach((a, i) => {
+                        html += '<div class="hash-row"><span class="algo">' + labels[i] + '</span><span class="value">' + data[a] + '</span></div>';
+                    });
+                    document.getElementById('hash-results').innerHTML = html;
+                });
+            }, 200);
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') showPanel('home');
+        });
+    </script>
+</body>
+</html>
