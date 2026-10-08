@@ -56,6 +56,36 @@
                 </div>
             </div>
         </section>
+        <section class="panel" id="crypto">
+            <div class="card">
+                <div class="card-inner">
+                    <div class="card-header"><div><span class="eyebrow">Crypto</span><h2 class="card-title">เข้ารหัส & แฮช</h2></div></div>
+                    <div class="field-group">
+                        <div class="field"><label>ข้อความ</label><input id="enc-text" type="text" placeholder="ข้อความ..."></div>
+                        <div class="field"><label>คีย์ (Caesar/Vigenere)</label><input id="enc-key" type="text" placeholder="คีย์"></div>
+                        <div class="field"><label>อัลกอริทึม</label><select id="enc-algo"><option value="caesar">Caesar</option><option value="vigenere">Vigenere</option><option value="base64">Base64</option><option value="md5">MD5</option><option value="sha1">SHA-1</option><option value="sha256">SHA-256</option><option value="sha512">SHA-512</option></select></div>
+                    </div>
+                    <div class="actions"><button class="btn" id="enc-btn">ประมวลผล</button></div>
+                    <div class="output" id="enc-out">ผลลัพธ์จะแสดงที่นี่</div>
+                </div>
+            </div>
+        </section>
+        <section class="panel" id="hashcmp">
+            <div class="card"><div class="card-inner"><div class="card-header"><div><span class="eyebrow">Hash Compare</span><h2 class="card-title">เปรียบเทียบแฮช</h2></div></div><div class="field"><label>ข้อความ</label><input id="hc-text" type="text" placeholder="ข้อความ..."></div><div class="hash-list" id="hc-list"></div></div></div>
+        </section>
+        <section class="panel" id="risk">
+            <div class="card"><div class="card-inner"><div class="card-header"><div><span class="eyebrow">Risk</span><h2 class="card-title">Risk Assessment Engine</h2></div></div><div class="field-group"><div class="field"><label>ทรัพย์สิน</label><input id="r-asset" type="text"></div><div class="field"><label>Likelihood (1-5)</label><select id="r-l"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></div><div class="field"><label>Impact (1-5)</label><select id="r-i"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></div></div><div class="field"><label>รายละเอียด</label><textarea id="r-desc"></textarea></div><div class="actions"><button class="btn" id="r-add">เพิ่มความเสี่ยง</button></div><div class="table-wrap"><table id="r-table"></table></div></div></div>
+        </section>
+        <section class="panel" id="dashboard">
+            <div class="card"><div class="card-inner"><div class="card-header"><div><span class="eyebrow">Dashboard</span><h2 class="card-title">Security Dashboard</h2></div></div><div class="chart-shell"><canvas id="d-chart" height="120"></canvas></div></div></div>
+        </section>
+        <section class="panel" id="report">
+            <div class="card"><div class="card-inner"><div class="card-header"><div><span class="eyebrow">Report</span><h2 class="card-title">Automated Security Report</h2></div></div><div class="actions"><button class="btn" id="rep-gen">สร้างรายงาน</button><button class="btn ghost" id="rep-pdf">Export PDF</button><button class="btn ghost" id="rep-json">Export JSON</button></div><div id="rep-view" class="output" style="background:transparent;border:none"></div></div></div>
+        </section>
+        <section class="panel" id="about">
+            <div class="card"><div class="card-inner"><div class="card-header"><div><span class="eyebrow">About</span><h2 class="card-title">เกี่ยวกับ CyberShield</h2></div></div><p class="card-subtitle">CyberShield v1.1.1 - เครื่องมือเพื่อการศึกษาเท่านั้น</p></div></div>
+        </section>
+
     </main>
     <footer>CyberShield v1.1.1 | Static Site for GitHub Pages</footer>
 <script>
