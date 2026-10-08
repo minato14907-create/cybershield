@@ -175,6 +175,10 @@
             font-size: 0.75rem; color: var(--text-dim); font-family: 'Noto Sans Thai', 'JetBrains Mono', monospace;
         }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.6/dist/chart.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.2/html2pdf.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/js-md5@0.8.3/src/md5.min.js"></script>
+    
 </head>
 <body>
     <div class="matrix-bg"></div>
@@ -193,6 +197,9 @@
         <button class="tab" onclick="showPanel('password')">วิเคราะห์รหัสผ่าน</button>
         <button class="tab" onclick="showPanel('encryption')">เข้ารหัส</button>
         <button class="tab" onclick="showPanel('hashing')">แฮช</button>
+        <button class="tab" onclick="showPanel('hash_cracker')">แคร็กแฮช</button>
+        <button class="tab" onclick="showPanel('port_scanner')">สแกนพอร์ต</button>
+        <button class="tab" onclick="showPanel('subdomain_scanner')">ซับโดเมน</button>
         <button class="tab" onclick="showPanel('about')">เกี่ยวกับ</button>
     </div>
 
@@ -261,6 +268,11 @@
                         <span id="entropy-val" style="font-family:'JetBrains Mono'; color:var(--cyan);">-- bits</span>
                     </div>
                 </div>
+            
+                <div class="card" id="pwd-risk-report" style="display:none; margin-top:1.5rem; border-color:var(--red);">
+                    <h3 style="color:var(--red);"><span id="pwd-risk-icon">&#9888;</span> Risk Report (ประเมินความเสี่ยง)</h3>
+                    <div id="pwd-risk-content" style="font-size:0.9rem; color:var(--text-dim); margin-top:0.5rem;"></div>
+                </div>
             </div>
             <div class="grid" style="margin-top:1.5rem;">
                 <div class="card">
@@ -318,6 +330,48 @@
             </div>
         </div>
 
+        
+        <!-- แคร็กแฮช -->
+        <div class="panel" id="hash_cracker">
+            <div class="two-col">
+                <div class="card">
+                    <h3>&#128275; แคร็กแฮช</h3>
+                    <input type="text" id="hc-hash" placeholder="แฮชที่ต้องการแคร็ก (เช่น MD5, SHA256)">
+                    <select id="hc-mode">
+                        <option value="dictionary">Dictionary Attack</option>
+                        <option value="bruteforce">Brute Force (ความยาวไม่เกิน 4)</option>
+                    </select>
+                    <button id="btn-hc" onclick="crackHash()">เริ่มแคร็ก</button>
+                    <div class="result-box" id="hc-result" style="margin-top:1rem;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- สแกนพอร์ต -->
+        <div class="panel" id="port_scanner">
+            <div class="card">
+                <h3>&#127760; สแกนพอร์ต</h3>
+                <input type="text" id="ps-target" placeholder="โดเมน หรือ IP (เช่น scanme.nmap.org)">
+                <input type="text" id="ps-ports" placeholder="พอร์ตที่ต้องการสแกน (เว้นว่างเพื่อสแกนพอร์ตทั่วไป) เช่น 22, 80, 443">
+                <button id="btn-ps" onclick="scanPort()">เริ่มสแกน</button>
+                <div class="result-box" id="ps-result" style="margin-top:1rem;">รอคำสั่งสแกน...</div>
+                <div class="card" id="ps-risk-report" style="display:none; margin-top:1.5rem;">
+                    <h3 id="ps-risk-title"><span id="ps-risk-icon">&#9888;</span> Risk Report (ประเมินความเสี่ยง)</h3>
+                    <div id="ps-risk-content" style="font-size:0.9rem; color:var(--text-dim); margin-top:0.5rem;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ซับโดเมน -->
+        <div class="panel" id="subdomain_scanner">
+            <div class="card">
+                <h3>&#128269; สแกนซับโดเมน</h3>
+                <input type="text" id="ss-domain" placeholder="โดเมนที่ต้องการสแกน (เช่น example.com)">
+                <button id="btn-ss" onclick="scanSubdomain()">เริ่มสแกน</button>
+                <div class="result-box" id="ss-result" style="margin-top:1rem;">รอคำสั่งสแกน...</div>
+            </div>
+        </div>
+
         <!-- เกี่ยวกับ -->
         <div class="panel" id="about">
             <div class="about-section">
@@ -357,11 +411,12 @@
     </footer>
 
     <script>
+
         function showPanel(id) {
             document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             document.getElementById(id).classList.add('active');
-            const tabNames = {'home':'หน้าแรก','password':'วิเคราะห์รหัสผ่าน','encryption':'เข้ารหัส','hashing':'แฮช','about':'เกี่ยวกับ'};
+            const tabNames = {'home':'หน้าแรก','password':'วิเคราะห์รหัสผ่าน','encryption':'เข้ารหัส','hashing':'แฮช','hash_cracker':'แคร็กแฮช','port_scanner':'สแกนพอร์ต','subdomain_scanner':'ซับโดเมน','about':'เกี่ยวกับ'};
             document.querySelectorAll('.tab').forEach(t => {
                 if (t.textContent === tabNames[id]) t.classList.add('active');
             });
@@ -377,6 +432,183 @@
         };
 
         let passwordTimeout;
+
+        // ===== Local API (ทำงานฝั่ง browser ไม่ต้องพึ่ง backend) =====
+        const COMMON_WORDS = [
+            "password", "123456", "12345678", "qwerty", "abc123",
+            "monkey", "master", "dragon", "login", "princess",
+            "football", "shadow", "sunshine", "trustno1", "iloveyou",
+            "batman", "access", "hello", "charlie", "password1",
+            "admin", "letmein", "welcome", "summer", "winter",
+            "spring", "autumn", "computer", "internet", "school",
+            "google", "facebook", "amazon", "microsoft", "apple",
+            "test", "user", "guest", "root", "toor",
+            "pass", "secret", "love", "sex", "god",
+        ];
+
+        function fmtCrackTime(seconds) {
+            if (!isFinite(seconds)) return "Countless years";
+            if (seconds < 1) return "Instantly";
+            if (seconds < 60) return seconds.toFixed(0) + " seconds";
+            if (seconds < 3600) return (seconds / 60).toFixed(0) + " minutes";
+            if (seconds < 86400) return (seconds / 3600).toFixed(0) + " hours";
+            if (seconds < 31536000) return (seconds / 86400).toFixed(0) + " days";
+            const years = seconds / 31536000;
+            if (years > 1e9) return years.toExponential(2) + " years";
+            return years.toLocaleString("en-US", {maximumFractionDigits: 0}) + " years";
+        }
+
+        function apiAnalyzePassword(password) {
+            let charset = 0;
+            if (/[a-z]/.test(password)) charset += 26;
+            if (/[A-Z]/.test(password)) charset += 26;
+            if (/\d/.test(password)) charset += 10;
+            if (/[!@#$%^&*(),.?":{}|<>]/.test(password)) charset += 32;
+
+            const entropy = charset > 0 ? password.length * Math.log2(charset) : 0;
+
+            let score = 0;
+            const feedback = [];
+            if (password.length >= 8) score += 1;
+            else feedback.push("Use at least 8 characters");
+            if (password.length >= 12) score += 1;
+            if (/[A-Z]/.test(password) && /[a-z]/.test(password)) score += 1;
+            else feedback.push("Mix uppercase and lowercase letters");
+            if (/\d/.test(password)) score += 1;
+            else feedback.push("Add numbers");
+            if (/[!@#$%^&*(),.?":{}|<>]/.test(password)) score += 1;
+            else feedback.push("Add special characters");
+            score = Math.min(score, 4);
+
+            const labels = {0: "Very Weak", 1: "Weak", 2: "Fair", 3: "Strong", 4: "Very Strong"};
+            const seconds = charset > 0 ? Math.pow(charset, password.length) / 10000 : 0;
+
+            return {
+                score: score,
+                strength: labels[score] || "Unknown",
+                entropy: Math.round(entropy * 100) / 100,
+                crack_time: fmtCrackTime(seconds),
+                has_upper: /[A-Z]/.test(password),
+                has_lower: /[a-z]/.test(password),
+                has_digit: /\d/.test(password),
+                has_special: /[!@#$%^&*(),.?":{}|<>]/.test(password),
+                length: password.length,
+                feedback: feedback,
+            };
+        }
+
+        function b64encode(str) {
+            const bytes = new TextEncoder().encode(str);
+            let bin = "";
+            bytes.forEach(b => bin += String.fromCharCode(b));
+            return btoa(bin);
+        }
+
+        async function hashText(algo, text) {
+            if (algo === "md5") return md5(text);
+            const names = {sha1: "SHA-1", sha256: "SHA-256", sha512: "SHA-512"};
+            if (typeof crypto === "undefined" || !crypto.subtle) throw new Error("เบราว์เซอร์นี้ไม่รองรับ WebCrypto (ต้องเปิดผ่าน https)");
+            const buf = await crypto.subtle.digest(names[algo], new TextEncoder().encode(text));
+            return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
+        }
+
+        function identifyHash(h) {
+            const len = h.length;
+            if (len === 32) return "md5";
+            if (len === 40) return "sha1";
+            if (len === 64) return "sha256";
+            if (len === 128) return "sha512";
+            return "unknown";
+        }
+
+        async function apiEncrypt({text, key, algorithm}) {
+            if (!text) return {error: "No text provided"};
+            if (algorithm === "caesar") {
+                const shift = /^\d+$/.test(key || "") ? parseInt(key, 10) : 3;
+                let out = "";
+                for (const ch of text) {
+                    if (/[a-zA-Z]/.test(ch)) {
+                        const base = ch === ch.toUpperCase() ? 65 : 97;
+                        out += String.fromCharCode((ch.charCodeAt(0) - base + shift) % 26 + base);
+                    } else out += ch;
+                }
+                return {ciphertext: out, algorithm: "Caesar Cipher"};
+            }
+            if (algorithm === "vigenere") {
+                const k = (key || "key").toLowerCase();
+                let out = "", ki = 0;
+                for (const ch of text) {
+                    if (/[a-zA-Z]/.test(ch)) {
+                        const base = ch === ch.toUpperCase() ? 65 : 97;
+                        const shift = k.charCodeAt(ki % k.length) - 97;
+                        out += String.fromCharCode((ch.charCodeAt(0) - base + shift) % 26 + base);
+                        ki++;
+                    } else out += ch;
+                }
+                return {ciphertext: out, algorithm: "Vigenere Cipher"};
+            }
+            if (algorithm === "base64") return {ciphertext: b64encode(text), algorithm: "Base64"};
+            if (algorithm === "md5") return {ciphertext: md5(text), algorithm: "MD5"};
+            if (algorithm === "sha256") return {ciphertext: await hashText("sha256", text), algorithm: "SHA-256"};
+            return {error: "Unknown algorithm"};
+        }
+
+        async function apiHashCompare(text) {
+            if (!text) return {error: "No text provided"};
+            return {
+                md5: md5(text),
+                sha1: await hashText("sha1", text),
+                sha256: await hashText("sha256", text),
+                sha512: await hashText("sha512", text),
+            };
+        }
+
+        async function apiCrackHash({hash, mode}) {
+            hash = (hash || "").trim().toLowerCase();
+            if (!hash) return {error: "No hash provided"};
+            const algo = identifyHash(hash);
+            if (algo === "unknown") return {error: "Unknown hash length/algorithm"};
+
+            const t0 = performance.now();
+            let attempts = 0;
+            const done = (cracked, plaintext) => ({
+                hash: hash, algorithm: algo, cracked: cracked, plaintext: plaintext,
+                time_seconds: Math.round((performance.now() - t0) / 10) / 100,
+                attempts: attempts,
+            });
+
+            const tryWord = async (w) => {
+                attempts++;
+                return (algo === "md5" ? md5(w) : await hashText(algo, w)) === hash;
+            };
+
+            if (mode !== "brute") {
+                for (const w of COMMON_WORDS) {
+                    if (await tryWord(w)) return done(true, w);
+                }
+                return done(false, null);
+            }
+
+            const charset = "abcdefghijklmnopqrstuvwxyz0123456789";
+            const maxLen = algo === "md5" ? 4 : 3;
+            let stack = [""];
+            while (stack.length) {
+                const cand = stack.pop();
+                if (cand) {
+                    if (await tryWord(cand)) return done(true, cand);
+                }
+                if (cand.length < maxLen) {
+                    for (let i = charset.length - 1; i >= 0; i--) stack.push(cand + charset[i]);
+                }
+                if (attempts % 2000 === 0) {
+                    await new Promise(r => setTimeout(r, 0));
+                    const box = document.getElementById("hc-result");
+                    if (box) box.textContent = "กำลังแคร็ก... ลองไปแล้ว " + attempts.toLocaleString("en-US") + " ค่า";
+                }
+            }
+            return done(false, null);
+        }
+
         function analyzePassword() {
             clearTimeout(passwordTimeout);
             const pwd = document.getElementById('pwd-input').value;
@@ -387,14 +619,12 @@
                 document.getElementById('entropy-val').textContent = '-- bits';
                 document.getElementById('char-tags').innerHTML = '';
                 document.getElementById('feedback-list').innerHTML = '';
+                document.getElementById('pwd-risk-report').style.display = 'none';
                 return;
             }
             passwordTimeout = setTimeout(() => {
-                fetch('/api/password/analyze', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({password: pwd})
-                }).then(r => r.json()).then(data => {
+                {
+                    const data = apiAnalyzePassword(pwd);
                     const colors = ['#ff3366', '#ff6633', '#ffcc00', '#00cc6a', '#00ff88'];
                     const pct = ((data.score + 1) / 5) * 100;
                     document.getElementById('strength-fill').style.width = pct + '%';
@@ -417,20 +647,44 @@
                         ? data.feedback.map(f => '&#9888; ' + (feedbackTH[f] || f)).join('<br>')
                         : '&#10003; ดีมาก แข็งแรง!';
                     document.getElementById('feedback-list').innerHTML = fb;
-                });
+                    
+                    // Auto Risk Report
+                    const riskRep = document.getElementById('pwd-risk-report');
+                    const riskCon = document.getElementById('pwd-risk-content');
+                    const riskIcon = document.getElementById('pwd-risk-icon');
+                    riskRep.style.display = 'block';
+                    
+                    let riskLevel = '', riskColor = '', riskAction = '';
+                    if (data.score <= 1) {
+                        riskLevel = 'CRITICAL (วิกฤติ)'; riskColor = 'var(--red)';
+                        riskAction = 'เสี่ยงต่อการถูก Brute-force ได้ทันที ควรเปลี่ยนรหัสผ่านด่วน!';
+                    } else if (data.score === 2) {
+                        riskLevel = 'MEDIUM (ปานกลาง)'; riskColor = 'var(--yellow)';
+                        riskAction = 'มีความเสี่ยงปานกลาง อาจถูกแคร็กได้ในเวลาไม่นาน ควรเพิ่มความยาวและอักขระพิเศษ';
+                    } else {
+                        riskLevel = 'LOW (ต่ำ)'; riskColor = 'var(--green)';
+                        riskAction = 'รหัสผ่านมีความแข็งแรง ปลอดภัยจากการโจมตีทั่วไป';
+                    }
+                    
+                    riskRep.style.borderColor = riskColor;
+                    riskRep.querySelector('h3').style.color = riskColor;
+                    riskIcon.innerHTML = data.score <= 2 ? '&#9888;' : '&#10003;';
+                    
+                    riskCon.innerHTML = `
+                        <div style="margin-bottom:0.5rem;"><strong>ระดับความเสี่ยง:</strong> <span style="color:${riskColor}; font-weight:bold;">${riskLevel}</span></div>
+                        <div><strong>ผลกระทบ:</strong> ${riskAction}</div>
+                    `;
+                }
             }, 200);
         }
 
-        function encryptText() {
+        async function encryptText() {
             const text = document.getElementById('enc-input').value;
             const key = document.getElementById('enc-key').value;
             const algo = document.getElementById('enc-algo').value;
             if (!text) return;
-            fetch('/api/encrypt', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({text, key, algorithm: algo})
-            }).then(r => r.json()).then(data => {
+            {
+                const data = await apiEncrypt({text, key, algorithm: algo});
                 const el = document.getElementById('enc-result');
                 if (data.ciphertext) {
                     el.className = 'result-box success';
@@ -439,7 +693,7 @@
                     el.className = 'result-box error';
                     el.textContent = data.error;
                 }
-            });
+            }
         }
 
         let hashTimeout;
@@ -447,12 +701,10 @@
             clearTimeout(hashTimeout);
             const text = document.getElementById('hash-input').value;
             if (!text) return;
-            hashTimeout = setTimeout(() => {
-                fetch('/api/hash/compare', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({text})
-                }).then(r => r.json()).then(data => {
+            hashTimeout = setTimeout(async () => {
+                {
+                    const data = await apiHashCompare(text);
+                    if (data.error) return;
                     const algos = ['md5', 'sha1', 'sha256', 'sha512'];
                     const labels = ['MD5', 'SHA-1', 'SHA-256', 'SHA-512'];
                     let html = '';
@@ -460,13 +712,83 @@
                         html += '<div class="hash-row"><span class="algo">' + labels[i] + '</span><span class="value">' + data[a] + '</span></div>';
                     });
                     document.getElementById('hash-results').innerHTML = html;
-                });
+                }
             }, 200);
+        }
+
+        async function crackHash() {
+            const hash = document.getElementById('hc-hash').value;
+            const mode = document.getElementById('hc-mode').value;
+            const btn = document.getElementById('btn-hc');
+            const res = document.getElementById('hc-result');
+            
+            if (!hash) return;
+            btn.textContent = 'กำลังแคร็ก...';
+            btn.disabled = true;
+            res.textContent = 'โปรดรอสักครู่...';
+            res.className = 'result-box';
+            
+            try {
+                const data = await apiCrackHash({hash, mode});
+                btn.textContent = 'เริ่มแคร็ก';
+                btn.disabled = false;
+                if (data.error) {
+                    res.className = 'result-box error';
+                    res.textContent = 'Error: ' + data.error;
+                } else if (data.cracked) {
+                    res.className = 'result-box success';
+                    res.innerHTML = `เจอแล้ว! รหัสคือ: <strong style="color:var(--cyan); font-size:1.2rem;">${data.plaintext}</strong><br><br>อัลกอริทึม: ${data.algorithm.toUpperCase()}<br>เวลา: ${data.time_seconds} วินาที<br>จำนวนครั้ง: ${data.attempts}`;
+                } else {
+                    res.className = 'result-box error';
+                    res.innerHTML = `ไม่พบรหัสผ่าน<br><br>อัลกอริทึม: ${data.algorithm.toUpperCase()}<br>เวลา: ${data.time_seconds} วินาที<br>จำนวนครั้ง: ${data.attempts}`;
+                }
+            } catch (e) {
+                btn.textContent = 'เริ่มแคร็ก';
+                btn.disabled = false;
+                res.className = 'result-box error';
+                res.textContent = 'Error: ' + e;
+            }
+        }
+
+        function scanPort() {
+            const target = document.getElementById('ps-target').value;
+            const ports = document.getElementById('ps-ports').value;
+            const btn = document.getElementById('btn-ps');
+            const res = document.getElementById('ps-result');
+            
+            if (!target) return;
+            btn.textContent = 'กำลังสแกน...';
+            btn.disabled = true;
+            res.innerHTML = '<span style="color:var(--yellow)">กำลังสแกนพอร์ต อาจใช้เวลาสักครู่...</span>';
+            res.className = 'result-box';
+            
+            btn.textContent = 'เริ่มสแกน';
+            btn.disabled = false;
+            res.className = 'result-box error';
+            res.textContent = 'ฟีเจอร์นี้ต้องใช้ backend เพราะเบราว์เซอร์ถูกจำกัดไม่ให้สแกนเครือข่าย\nให้รันโปรเจกต์ในเครื่องด้วย: python dashboard.py แล้วเปิด http://127.0.0.1:5000';
+        }
+
+        function scanSubdomain() {
+            const domain = document.getElementById('ss-domain').value;
+            const btn = document.getElementById('btn-ss');
+            const res = document.getElementById('ss-result');
+            
+            if (!domain) return;
+            btn.textContent = 'กำลังสแกน...';
+            btn.disabled = true;
+            res.innerHTML = '<span style="color:var(--yellow)">กำลังสแกนโดเมนย่อย อาจใช้เวลาสักครู่...</span>';
+            res.className = 'result-box';
+            
+            btn.textContent = 'เริ่มสแกน';
+            btn.disabled = false;
+            res.className = 'result-box error';
+            res.textContent = 'ฟีเจอร์นี้ต้องใช้ backend เพราะเบราว์เซอร์ถูกจำกัดไม่ให้สแกน DNS\nให้รันโปรเจกต์ในเครื่องด้วย: python dashboard.py แล้วเปิด http://127.0.0.1:5000';
         }
 
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') showPanel('home');
         });
+
     </script>
 </body>
 </html>
