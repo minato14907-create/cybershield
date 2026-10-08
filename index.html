@@ -88,51 +88,15 @@
 
     </main>
     <footer>CyberShield v1.1.1 | Static Site for GitHub Pages</footer>
-<script>
-        const panels = document.querySelectorAll('.panel');
-        const navBtns = document.querySelectorAll('.nav-btn');
-        const toolItems = document.querySelectorAll('.tool-item');
-        function showPanel(id){
-            panels.forEach(p=>p.classList.toggle('active', p.id===id));
-            navBtns.forEach(b=>b.classList.toggle('active', b.dataset.panel===id));
-        }
-        navBtns.forEach(b=>b.addEventListener('click',()=>showPanel(b.dataset.panel)));
-        toolItems.forEach(b=>b.addEventListener('click',()=>showPanel(b.dataset.panel)));
-        
-        const pwdInput = document.getElementById('pwd-input');
-        pwdInput.addEventListener('input', analyzePassword);
-        function analyzePassword(){
-            const pwd = pwdInput.value;
-            if(!pwd){ document.getElementById('pwd-level').textContent='--'; document.getElementById('pwd-score').textContent='คะแนน: --'; document.getElementById('pwd-entropy').textContent='-- bits'; document.getElementById('pwd-crack').textContent='--'; document.getElementById('pwd-chars').innerHTML=''; document.getElementById('pwd-advice').textContent='กรุณาพิมพ์รหัสผ่านเพื่อเริ่มวิเคราะห์'; return; }
-            let charset=0; if(/[a-z]/.test(pwd)) charset+=26; if(/[A-Z]/.test(pwd)) charset+=26; if(/\d/.test(pwd)) charset+=10; if(/[!@#$%^&*(),.?":{}|<>]/.test(pwd)) charset+=32;
-            const entropy = charset? pwd.length*Math.log2(charset):0;
-            let score=0, adv=[];
-            if(pwd.length>=8) score++; else adv.push('เพิ่มความยาวอย่างน้อย 8 ตัวอักษร');
-            if(pwd.length>=12) score++;
-            if(/[A-Z]/.test(pwd)&&/[a-z]/.test(pwd)) score++; else adv.push('ผสมตัวพิมพ์เล็กและตัวพิมพ์ใหญ่');
-            if(/\d/.test(pwd)) score++; else adv.push('เพิ่มตัวเลข');
-            if(/[!@#$%^&*(),.?":{}|<>]/.test(pwd)) score++; else adv.push('เพิ่มอักขระพิเศษ');
-            score=Math.min(score,4);
-            const labels=['อ่อนมาก','อ่อน','พอใช้','แข็งแรง','แข็งแรงมาก'];
-            document.getElementById('pwd-level').textContent=labels[score];
-            document.getElementById('pwd-score').textContent='คะแนน: '+score+'/4';
-            document.getElementById('pwd-entropy').textContent=entropy.toFixed(2)+' bits';
-            let comb=charset? Math.pow(charset,pwd.length):1, sec=comb/1e4;
-            let crack='--';
-            if(sec<1) crack='ทันที'; else if(sec<60) crack=Math.round(sec)+' วินาที'; else if(sec<3600) crack=Math.round(sec/60)+' นาที'; else if(sec<86400) crack=Math.round(sec/3600)+' ชั่วโมง'; else if(sec<31536000) crack=Math.round(sec/86400)+' วัน'; else { let y=sec/31536000; crack=y<1e12? y.toLocaleString('th-TH')+' ปี': y.toExponential(2)+' ปี'; }
-            document.getElementById('pwd-crack').textContent=crack;
-            const chars=[];
-            if(/[a-z]/.test(pwd)) chars.push('<span class="btn ghost">a-z ✓</span>');
-            else chars.push('<span class="btn ghost">a-z ✗</span>');
-            if(/[A-Z]/.test(pwd)) chars.push('<span class="btn ghost">A-Z ✓</span>');
-            else chars.push('<span class="btn ghost">A-Z ✗</span>');
-            if(/\d/.test(pwd)) chars.push('<span class="btn ghost">0-9 ✓</span>');
-            else chars.push('<span class="btn ghost">0-9 ✗</span>');
-            if(/[!@#$%^&*(),.?":{}|<>]/.test(pwd)) chars.push('<span class="btn ghost">!@# ✓</span>');
-            else chars.push('<span class="btn ghost">!@# ✗</span>');
-            document.getElementById('pwd-chars').innerHTML=chars.join('');
-            document.getElementById('pwd-advice').textContent=adv.length? adv.join('\n'): 'รหัสผ่านมีความแข็งแรงดี';
-        }
+
+    <script>
+    const panels=document.querySelectorAll(".panel"),navBtns=document.querySelectorAll(".nav-btn"),toolItems=document.querySelectorAll(".tool-item");
+    function show(id){panels.forEach(p=>p.classList.toggle("active",p.id===id));navBtns.forEach(b=>b.classList.toggle("active",b.dataset.panel===id));}
+    navBtns.forEach(b=>b.onclick=()=>show(b.dataset.panel));toolItems.forEach(b=>b.onclick=()=>show(b.dataset.panel));
+    const pwd=document.getElementById("pwd-input");
+    pwd.oninput=()=>{const v=pwd.value;if(!v){document.getElementById("pwd-level").textContent="--";document.getElementById("pwd-score").textContent="คะแนน: --";document.getElementById("pwd-entropy").textContent="-- bits";document.getElementById("pwd-crack").textContent="--";document.getElementById("pwd-chars").innerHTML="";document.getElementById("pwd-advice").textContent="กรุณาพิมพ์รหัสผ่านเพื่อเริ่มวิเคราะห์";return;}
+    let cs=0;if(/[a-z]/.test(v))cs+=26;if(/[A-Z]/.test(v))cs+=26;if(/\d/.test(v))cs+=10;if(/[!@#$%^&*(),.?":{}|<>]/.test(v))cs+=32;
+    const ent=cs?v.length*Math.log2(cs):0;let sc=0,ad=[];if(v.length>=8)sc++;else ad.push("เพิ่มความยาวอย่างน้อย 8 ตัวอักษร");if(v.length>=12)sc++;if(/[A-Z]/.test(v)&&/[a-z]/.test(v))sc++;else ad.push("ผสมตัวพิมพ์เล็กและตัวพิมพ์ใหญ่");if(/\d/.test(v))sc++;else ad.push("เพิ่มตัวเลข");if(/[!@#$%^&*(),.?":{}|<>]/.test(v))sc++;else ad.push("เพิ่มอักขระพิเศษ");sc=Math.min(sc,4);const lb=["อ่อนมาก","อ่อน","พอใช้","แข็งแรง","แข็งแรงมาก"];document.getElementById("pwd-level").textContent=lb[sc];document.getElementById("pwd-score").textContent="คะแนน: "+sc+"/4";document.getElementById("pwd-entropy").textContent=ent.toFixed(2)+" bits";let cmb=cs?Math.pow(cs,v.length):1,sec=cmb/1e4;let cr="--";if(sec<1)cr="ทันที";else if(sec<60)cr=Math.round(sec)+" วินาที";else if(sec<3600)cr=Math.round(sec/60)+" นาที";else if(sec<86400)cr=Math.round(sec/3600)+" ชั่วโมง";else if(sec<31536000)cr=Math.round(sec/86400)+" วัน";else{let y=sec/31536000;cr=y<1e12?y.toLocaleString("th-TH")+" ปี":y.toExponential(2)+" ปี";}document.getElementById("pwd-crack").textContent=cr;let ch=[];ch.push(/\d/.test(v)?'<span class="btn ghost">0-9 ✓</span>':'<span class="btn ghost">0-9 ✗</span>');ch.push(/[a-z]/.test(v)?'<span class="btn ghost">a-z ✓</span>':'<span class="btn ghost">a-z ✗</span>');ch.push(/[A-Z]/.test(v)?'<span class="btn ghost">A-Z ✓</span>':'<span class="btn ghost">A-Z ✗</span>');ch.push(/[!@#$%^&*(),.?":{}|<>]/.test(v)?'<span class="btn ghost">!@# ✓</span>':'<span class="btn ghost">!@# ✗</span>');document.getElementById("pwd-chars").innerHTML=ch.join("");document.getElementById("pwd-advice").textContent=ad.length?ad.join("\n"):"รหัสผ่านมีความแข็งแรงดี";}
     </script>
 </body>
 </html>
